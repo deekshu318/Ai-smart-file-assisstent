@@ -1,0 +1,165 @@
+<!-- AI Smart File Landing Page -->
+<div id="auth-view" class="auth-view landing-view">
+    <!-- Navbar -->
+    <nav class="landing-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="brand-logo"><i class="fas fa-robot"></i></div>
+                <span class="brand-name">AI Smart File</span>
+            </div>
+            <div class="nav-links">
+                <div class="nav-dropdown">
+                    <a href="#features" class="nav-link">Features <i class="fas fa-chevron-down"></i></a>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item">
+                            <div class="item-icon"><i class="fas fa-globe"></i></div>
+                            <div class="item-content">
+                                <h3>Web & Video Intelligence</h3>
+                                <p>Analyze content from URLs and videos for unified knowledge extraction</p>
+                            </div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="item-icon"><i class="fas fa-comments"></i></div>
+                            <div class="item-content">
+                                <h3>Document Chat</h3>
+                                <p>Ask questions and get cited answers directly from your files</p>
+                            </div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="item-icon"><i class="fas fa-search"></i></div>
+                            <div class="item-content">
+                                <h3>Semantic Search</h3>
+                                <p>Find any information instantly with context-aware deep search</p>
+                            </div>
+                        </div>
+                        <div class="dropdown-item">
+                            <div class="item-icon"><i class="fas fa-lightbulb"></i></div>
+                            <div class="item-content">
+                                <h3>AI Insights</h3>
+                                <p>Extract summaries and key takeaways automatically from any data</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="/about" class="nav-link">About</a>
+            </div>
+            <div class="nav-actions">
+                <button id="btn-show-login" class="btn-text">Sign In</button>
+                <button id="btn-show-register" class="btn-primary-sm">Get Started Free</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                Upload documents, videos & audio.
+                <span class="gradient-text">Get answers from AI.</span>
+            </h1>
+            <p class="hero-subtitle">
+                Turn your files into a searchable AI assistant. Ask anything in natural language and get answers grounded in your sources — with citations you can click to verify.
+            </p>
+            <div class="hero-ctas">
+                <button id="btn-hero-get-started" class="btn-primary-lg">Get Started Free &rarr;</button>
+                <button class="btn-secondary-lg">See Features</button>
+            </div>
+
+            <!-- Social Proof -->
+            <div class="social-proof">
+                <div class="avatar-group">
+                    <img src="https://ui-avatars.com/api/?name=Alex&background=random" alt="User">
+                    <img src="https://ui-avatars.com/api/?name=Sarah&background=random" alt="User">
+                    <img src="https://ui-avatars.com/api/?name=Mike&background=random" alt="User">
+                    <img src="https://ui-avatars.com/api/?name=Emma&background=random" alt="User">
+                    <img src="https://ui-avatars.com/api/?name=John&background=random" alt="User">
+                </div>
+                <div class="proof-text">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span><strong>22,000+</strong> people trust Smart File with their documents</span>
+                </div>
+            </div>
+
+            <!-- Hero Footer -->
+            <div class="hero-footer">
+                <div class="footer-item"><i class="fas fa-check"></i> Free plan — no credit card</div>
+                <div class="footer-item"><i class="fas fa-globe"></i> 50+ languages</div>
+                <div class="footer-item"><i class="fas fa-lock"></i> Your data stays private</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Auth Modal Overlay -->
+    <div id="auth-modal" class="auth-modal-overlay hidden">
+        <div class="auth-modal-container">
+            <button id="btn-close-modal" class="btn-close-modal"><i class="fas fa-times"></i></button>
+            
+            <!-- Login Card -->
+            <div class="auth-card" id="login-card">
+                <div class="auth-header">
+                    <div class="auth-logo"><i class="fas fa-robot"></i></div>
+                    <h2>Login</h2>
+                    <p>Enter your credentials to access your workspace.</p>
+                </div>
+                <form id="login-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <div class="forgot-pass" id="btn-forgot-password">Forgot password?</div>
+                    <div class="status-message hidden" id="auth-status-message"></div>
+                    <button type="submit" class="btn-primary">Login</button>
+                </form>
+                <div class="auth-footer">
+                    <span>New here?</span>
+                    <button id="go-to-register" class="btn-link">Create Account</button>
+                </div>
+            </div>
+
+            <!-- Register Card -->
+            <div class="auth-card hidden" id="register-card">
+                <div class="auth-header">
+                    <div class="auth-logo"><i class="fas fa-robot"></i></div>
+                    <h2>Create Account</h2>
+                    <p>Start using AI Smart File today.</p>
+                </div>
+                <form id="register-form" class="auth-form">
+                    <div class="input-group">
+                        <label for="reg-full-name">Full Name</label>
+                        <input type="text" id="reg-full-name" placeholder="Your full name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-username">Username</label>
+                        <input type="text" id="reg-username" placeholder="Choose a username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-email">Email</label>
+                        <input type="email" id="reg-email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" placeholder="••••••••" required>
+                    </div>
+                    <div class="status-message hidden" id="register-status-message"></div>
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </form>
+                <div class="auth-footer">
+                    <span>Already have an account?</span>
+                    <button id="go-to-login" class="btn-link">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,80 @@
+<div id="upload-view" class="view-container upload-view hidden">
+    <div class="upload-header">
+        <h1>Add the file</h1>
+    </div>
+
+    <div class="upload-container">
+        <!-- Main Upload/Voice Card -->
+        <div class="upload-main-card">
+            <div class="upload-tabs">
+                <button class="upload-tab active" data-target="tab-upload">
+                    <i class="fas fa-upload"></i> Upload File
+                </button>
+                <button class="upload-tab" data-target="tab-voice">
+                    <i class="fas fa-microphone"></i> Voice Note
+                </button>
+            </div>
+
+            <!-- Upload File Content -->
+            <div class="tab-content active" id="tab-upload">
+                <div class="drop-zone" id="file-drop-zone">
+                    <i class="fas fa-download drop-icon"></i>
+                    <p>Drop here or click to browse</p>
+                    <input type="file" id="file-input" hidden multiple>
+                </div>
+            </div>
+
+            <!-- Voice Note Content -->
+            <div class="tab-content" id="tab-voice">
+                <div class="voice-recorder">
+                    <div class="voice-status" id="voice-status">Ready to record</div>
+                    <div class="voice-timer" id="voice-timer">00:00</div>
+                    <button class="btn-record" id="btn-record">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button class="btn-stop-record hidden" id="btn-stop-record">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formats Info Box -->
+        <div class="formats-info-box">
+            <button class="btn-upload-action" id="btn-trigger-file">Add</button>
+            <p>Allowed formats: .mp4, .mp3, .mov, .webm, .wav, .m4a, .aac, .ogg, .flac, .avi, .mkv, .pdf, .txt, .docx, .ppt, .pptx</p>
+        </div>
+
+        <!-- YouTube Link Card -->
+        <div class="link-card">
+            <div class="link-card-content">
+                <div class="link-icon youtube">
+                    <i class="fab fa-youtube"></i>
+                </div>
+                <h3>YouTube</h3>
+                <input type="text" class="link-input" id="youtube-link" placeholder="link to YouTube video">
+            </div>
+            <button class="btn-upload-action" id="btn-add-youtube">Add</button>
+        </div>
+
+        <!-- Website Link Card -->
+        <div class="link-card website-card">
+            <div class="link-card-content">
+                <div class="link-icon website">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="website-inputs">
+                    <div class="website-header">
+                        <h3>Website</h3>
+                        <div class="website-toggles">
+                            <button class="toggle-pill active" data-type="single">Single page</button>
+                            <button class="toggle-pill" data-type="discover">Discover pages</button>
+                        </div>
+                    </div>
+                    <input type="text" class="link-input" id="website-link" placeholder="https://example.com/page">
+                </div>
+            </div>
+            <button class="btn-upload-action" id="btn-add-website">Add</button>
+        </div>
+    </div>
+</div>

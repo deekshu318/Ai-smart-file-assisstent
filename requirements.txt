@@ -1,0 +1,42 @@
+# PDF & document processing
+pymupdf
+pdfplumber
+pytesseract
+pillow
+python-docx
+python-pptx
+
+# Text cleaning & utilities
+regex
+tqdm
+
+# NLP & embeddings
+sentence-transformers
+nltk
+
+# Vector database / similarity search
+faiss-cpu
+
+# Data handling
+numpy
+pandas
+
+# LLM integration (optional but recommended)
+openai
+langchain
+
+# App / API (optional UI)
+streamlit
+flask
+
+transformers
+torch
+sentencepiece
+google-genai
+python-dotenv
+sentence-transformers>=2.2.0
+chromadb
+requests
+fastapi
+uvicorn
+passlib[bcrypt]

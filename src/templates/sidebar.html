@@ -1,0 +1,42 @@
+<aside id="sidebar" class="sidebar">
+    <div class="sidebar-top">
+        <div class="new-chat-btn" id="new-chat-btn">
+            <i class="fas fa-plus"></i>
+            <span>New Chat</span>
+        </div>
+    </div>
+
+    <div class="sidebar-history">
+        <div id="history-list" class="history-list">
+            <div class="history-empty">
+                <p>No conversations yet</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <div id="profile-dropdown" class="profile-dropdown hidden">
+            <div class="dropdown-header">Account</div>
+            <div class="dropdown-item" id="menu-profile" data-view="profile">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+            <div class="dropdown-item" id="menu-settings" data-view="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+            <div class="dropdown-item logout-item" id="menu-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out</span>
+            </div>
+        </div>
+        <div class="user-card" id="user-profile-toggle">
+            <div class="avatar-sm" id="user-initials">U</div>
+            <div class="user-info-sm">
+                <h4 id="user-display-name">Loading...</h4>
+                <p>AI Assistant</p>
+            </div>
+            <i class="fas fa-chevron-up chevron-icon"></i>
+        </div>
+    </div>
+</aside>

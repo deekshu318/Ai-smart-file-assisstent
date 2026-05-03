@@ -1,0 +1,41 @@
+<div id="chat-view" class="view-container chat-view hidden">
+    <div class="chat-wrapper">
+        <div id="file-info-pill" class="file-info-pill hidden" style="margin: 10px auto; background: var(--accent-soft); color: var(--accent); padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; width: max-content; border: 1px solid var(--border-accent);"></div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="message ai animate-in">
+                <div class="msg-bubble">
+                    Hello! I'm your AI SmartFile assistant. How can I help you today?
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-section">
+            <div class="chat-input-container">
+                <div class="input-pill">
+                    <div class="input-left">
+                        <button class="icon-btn upload-trigger" id="upload-btn-chat" title="Upload File">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <span class="file-count-badge"><i class="fas fa-file-alt"></i> <span id="chat-file-count">0</span> files</span>
+                    </div>
+                    
+                    <textarea id="chat-input" placeholder="Ask about your files..." rows="1"></textarea>
+                    
+                    <div class="input-right">
+                        <div class="model-selector">
+                            <i class="fas fa-bolt"></i>
+                            <span>Fast</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <button class="icon-btn voice-btn">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button id="send-btn" class="send-btn-new">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

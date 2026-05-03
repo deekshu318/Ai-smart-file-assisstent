@@ -1,0 +1,13 @@
+node_modules/
+__pycache__/
+*.db
+*.log
+.env
+.venv/
+src/uploads/
+chroma_db/
+.vscode/
+**/*.env
+**/*.db
+**/*.log
+**/__pycache__/
