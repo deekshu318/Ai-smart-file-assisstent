@@ -1,0 +1,72 @@
+<!-- Edit Profile Modal Overlay -->
+<div class="auth-modal-overlay hidden" id="edit-profile-modal">
+    <div class="auth-modal-container profile-modal-container">
+        <!-- Close Button -->
+        <button class="btn-close-modal" id="close-profile-modal"><i class="fas fa-times"></i></button>
+        
+        <div class="auth-card edit-profile-card">
+            <!-- Modal Header -->
+            <div class="edit-profile-header">
+                <h3>Edit profile</h3>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="edit-profile-body">
+                <!-- Large Round Amber Yellow Initials Avatar -->
+                <div class="edit-profile-avatar-container" style="position: relative; margin: 0 auto 1.5rem auto; width: max-content;">
+                    <div class="profile-avatar-large yellow-avatar" id="edit-profile-avatar-large">JD</div>
+                    <div class="avatar-camera-btn" id="edit-avatar-upload-trigger">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    
+                    <!-- Hidden File Input -->
+                    <input type="file" id="edit-avatar-file-input" accept="image/*" style="display: none;">
+                    
+                    <!-- Dropdown Options Menu -->
+                    <div id="avatar-options-menu" class="avatar-options-menu hidden">
+                        <button type="button" id="btn-select-device"><i class="fas fa-file-image"></i> Select from device</button>
+                        <button type="button" id="btn-take-picture"><i class="fas fa-camera"></i> Take picture</button>
+                    </div>
+                </div>
+                
+                <!-- Status & Message banner -->
+                <div class="status-message hidden" id="profile-modal-status"></div>
+                
+                <!-- Input Fields Form -->
+                <div class="auth-form edit-profile-form">
+                    <div class="input-group">
+                        <label for="edit-profile-display-name">Display name</label>
+                        <input type="text" id="edit-profile-display-name" placeholder="Enter your display name" autocomplete="off">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="edit-profile-username">Username</label>
+                        <input type="text" id="edit-profile-username" placeholder="Enter your username" autocomplete="off">
+                    </div>
+                    
+                    <p class="edit-profile-help-text">Your profile helps people recognize you in group chats.</p>
+                </div>
+            </div>
+            
+            <!-- Modal Footer Buttons -->
+            <div class="edit-profile-footer">
+                <button class="modal-pill-btn cancel" id="edit-profile-cancel">Cancel</button>
+                <button class="modal-pill-btn save" id="edit-profile-save">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Camera Capture Modal Overlay -->
+    <div id="camera-modal-overlay" class="camera-modal-overlay hidden">
+        <div class="camera-modal-container">
+            <h4>Capture Profile Picture</h4>
+            <div class="camera-preview-wrapper">
+                <video id="camera-video" autoplay playsinline></video>
+            </div>
+            <div class="camera-controls">
+                <button id="btn-camera-close" class="modal-pill-btn cancel"><i class="fas fa-times"></i> Cancel</button>
+                <button id="btn-camera-capture" class="modal-pill-btn save"><i class="fas fa-camera"></i> Capture</button>
+            </div>
+        </div>
+    </div>
+</div>

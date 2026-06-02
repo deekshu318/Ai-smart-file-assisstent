@@ -1,0 +1,108 @@
+<div id="library-view" class="view-container library-view hidden">
+    <!-- Header Section -->
+    <div class="library-header animate-in">
+        <div class="library-title-section">
+            <h1 class="library-title">Document <span>Library</span></h1>
+            <p class="library-subtitle">Manage and query your uploaded knowledge bases, YouTube transcripts, and scraped websites.</p>
+        </div>
+        
+        <!-- Stats Panel -->
+        <div class="library-stats-container">
+            <div class="lib-stat-card">
+                <div class="stat-icon doc"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-total-count">0</span>
+                    <span class="stat-label">Total Resources</span>
+                </div>
+            </div>
+            <div class="lib-stat-card">
+                <div class="stat-icon pdf"><i class="fas fa-file-pdf"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-doc-count">0</span>
+                    <span class="stat-label">Documents</span>
+                </div>
+            </div>
+            <div class="lib-stat-card">
+                <div class="stat-icon yt"><i class="fab fa-youtube"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-yt-count">0</span>
+                    <span class="stat-label">YouTube Videos</span>
+                </div>
+            </div>
+            <div class="lib-stat-card">
+                <div class="stat-icon web"><i class="fas fa-globe"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stat-web-count">0</span>
+                    <span class="stat-label">Websites</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters Toolbar -->
+    <div class="library-toolbar animate-in">
+        <div class="lib-search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="lib-search-input" placeholder="Search by name, type, or source URL...">
+            <button class="clear-search-btn hidden" id="lib-clear-search"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="lib-filter-tabs">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="document"><i class="fas fa-file-alt"></i> Documents</button>
+            <button class="filter-tab" data-filter="youtube"><i class="fab fa-youtube"></i> YouTube</button>
+            <button class="filter-tab" data-filter="website"><i class="fas fa-globe"></i> Websites</button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="library-content animate-in">
+        <!-- Grid of Document Cards -->
+        <div class="library-grid" id="library-grid">
+            <!-- Cards will be dynamically rendered here via JavaScript -->
+        </div>
+
+        <!-- Empty State Container -->
+        <div class="library-empty-state hidden" id="library-empty-state">
+            <div class="empty-illustration">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3>Your library is empty</h3>
+            <p>Upload a PDF file, paste a YouTube link, or import a website to begin building your professional AI-powered knowledge base.</p>
+            <button class="empty-cta-btn" id="library-empty-cta"><i class="fas fa-plus"></i> Add First Resource</button>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Slide-in Content Preview Modal -->
+<div class="lib-modal-overlay hidden" id="lib-preview-modal">
+    <div class="lib-modal-card">
+        <div class="modal-header">
+            <div class="modal-title-area">
+                <span class="modal-badge" id="preview-modal-type-badge">PDF</span>
+                <h3 class="modal-title" id="preview-modal-title">Document Title</h3>
+            </div>
+            <button class="modal-close-btn" id="lib-close-preview-modal"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="preview-meta-bar">
+                <span class="preview-meta-item"><i class="fas fa-database"></i> <strong id="preview-chunks-val">0</strong> Chunks Stored</span>
+                <span class="preview-meta-item"><i class="fas fa-calendar-alt"></i> Uploaded: <strong id="preview-date-val">Unknown</strong></span>
+            </div>
+            
+            <div class="preview-sections-container" id="preview-chunks-container">
+                <!-- Chunks loaded dynamically -->
+                <div class="preview-loading">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <p>Loading document content...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button class="modal-action-btn primary" id="preview-modal-chat-btn"><i class="fas fa-comment-alt"></i> Ask AI about this resource</button>
+            <button class="modal-action-btn secondary" id="preview-modal-close-btn">Close Preview</button>
+        </div>
+    </div>
+</div>

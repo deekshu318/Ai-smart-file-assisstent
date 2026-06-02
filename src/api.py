@@ -13,6 +13,8 @@ from passlib.context import CryptContext
 from semantic_search import semantic_search
 from prepare_chromadb import process_and_store_document
 import shutil
+from youtube_processor import process_youtube_link
+from website_processor import process_website_link
 
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
@@ -30,6 +32,8 @@ engine = create_engine(
 
 def init_db():
     with engine.begin() as conn:
+        # Enable Write-Ahead Logging (WAL) mode for better SQLite concurrency in production
+        conn.execute(text("PRAGMA journal_mode=WAL;"))
         # Users table
         conn.execute(text('''
             CREATE TABLE IF NOT EXISTS users (
@@ -40,6 +44,12 @@ def init_db():
                 hashed_password TEXT NOT NULL
             )
         '''))
+        
+        # Add avatar column dynamically if it doesn't exist
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
+        except Exception:
+            pass
         
         # Conversations table
         conn.execute(text('''
@@ -68,7 +78,11 @@ def init_db():
 
 init_db()
 
-load_dotenv()
+from pathlib import Path
+current_dir = Path(__file__).parent
+load_dotenv(dotenv_path=current_dir / ".env")
+if not os.getenv("HUGGINGFACE_API_TOKEN"):
+    load_dotenv()
 HF_TOKEN = os.getenv("HUGGINGFACE_API_TOKEN")
 
 # Initialize FastAPI app
@@ -130,10 +144,22 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class ProfileUpdateRequest(BaseModel):
+    user_id: int
+    full_name: str
+    username: str
+    avatar: Optional[str] = None
+
 class ConversationCreate(BaseModel):
     user_id: int
     title: str = "New Conversation"
     document_id: Optional[str] = None
+
+class YoutubeRequest(BaseModel):
+    url: str
+
+class WebsiteRequest(BaseModel):
+    url: str
 
 @app.post("/register")
 async def register(request: RegisterRequest):
@@ -154,7 +180,7 @@ async def register(request: RegisterRequest):
 @app.post("/login")
 async def login(request: LoginRequest):
     with engine.connect() as conn:
-        result_proxy = conn.execute(text("SELECT id, full_name, username, email, hashed_password FROM users WHERE email = :em"), 
+        result_proxy = conn.execute(text("SELECT id, full_name, username, email, hashed_password, avatar FROM users WHERE email = :em"), 
                        {"em": request.email})
         result = result_proxy.fetchone()
 
@@ -166,7 +192,7 @@ async def login(request: LoginRequest):
                 "full_name": result[1],
                 "name": result[2], 
                 "email": result[3], 
-                "avatar": result[1][0].upper()
+                "avatar": result[5] if result[5] else result[1][0].upper()
             }
         }
     raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -174,6 +200,40 @@ async def login(request: LoginRequest):
 @app.post("/logout")
 async def logout():
     return {"status": "success"}
+
+@app.post("/profile/update")
+async def update_profile(request: ProfileUpdateRequest):
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE users SET full_name = :fn, username = :un, avatar = :av WHERE id = :uid"),
+                {"fn": request.full_name, "un": request.username, "av": request.avatar, "uid": request.user_id}
+            )
+        # Fetch the updated user record
+        with engine.connect() as conn:
+            result_proxy = conn.execute(
+                text("SELECT id, full_name, username, email, avatar FROM users WHERE id = :uid"),
+                {"uid": request.user_id}
+            )
+            result = result_proxy.fetchone()
+        
+        if result:
+            return {
+                "status": "success",
+                "user": {
+                    "id": result[0],
+                    "full_name": result[1],
+                    "name": result[2],
+                    "email": result[3],
+                    "avatar": result[4] if result[4] else result[1][0].upper()
+                }
+            }
+        raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        if "UNIQUE constraint failed" in str(e):
+            raise HTTPException(status_code=400, detail="Username already exists")
+        print(f"Profile update error: {e}")
+        raise HTTPException(status_code=500, detail="Database error during profile update")
 
 
 # --- File Upload Endpoints ---
@@ -190,12 +250,14 @@ async def upload_file(file: UploadFile = File(...)):
         if ext not in supported_exts:
             raise HTTPException(status_code=400, detail=f"Unsupported file format: {ext}. Supported formats are: {', '.join(supported_exts)}")
 
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        timestamp = int(time.time())
+        safe_filename = "".join([c for c in file.filename if c.isalpha() or c.isdigit() or c in [' ', '.', '_', '-']]).rstrip()
+        unique_filename = f"{timestamp}_{safe_filename.replace(' ', '_')}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        timestamp = int(time.time())
-        safe_filename = "".join([c for c in file.filename if c.isalpha() or c.isdigit() or c in [' ', '.', '_', '-']]).rstrip()
         document_id = f"doc_{timestamp}_{safe_filename.replace(' ', '_')}"
         
         success = process_and_store_document(file_path, document_id)
@@ -208,6 +270,48 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         print(f"Upload error: {e}")
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
+
+@app.post("/youtube")
+async def add_youtube_source(request: YoutubeRequest):
+    url = request.url
+    if not url:
+        raise HTTPException(status_code=400, detail="YouTube URL is required")
+    
+    try:
+        result = process_youtube_link(url)
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to process YouTube link. Make sure the video has captions enabled.")
+        
+        return {
+            "status": "success", 
+            "document_id": result["document_id"], 
+            "title": result["title"],
+            "filename": result["title"]
+        }
+    except Exception as e:
+        print(f"YouTube processing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/website")
+async def add_website_source(request: WebsiteRequest):
+    url = request.url
+    if not url:
+        raise HTTPException(status_code=400, detail="Website URL is required")
+    
+    try:
+        result = process_website_link(url)
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to process Website link. Make sure the site is accessible and allows scraping.")
+        
+        return {
+            "status": "success", 
+            "document_id": result["document_id"], 
+            "title": result["title"],
+            "filename": result["title"]
+        }
+    except Exception as e:
+        print(f"Website processing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/documents/count")
 async def get_documents_count():
@@ -225,7 +329,104 @@ async def get_documents_count():
     
     return {"count": len(unique_docs)}
 
+@app.get("/documents")
+async def get_all_documents():
+    from semantic_search import collection
+    results = collection.get(include=["metadatas"])
+    if not results or not results["metadatas"]:
+        return []
+    
+    docs_map = {}
+    for meta in results["metadatas"]:
+        doc_id = meta.get("document_id")
+        if not doc_id:
+            continue
+            
+        if doc_id not in docs_map:
+            # Infer details from doc_id
+            name = doc_id
+            doc_type = "document"
+            created_at = None
+            
+            if doc_id.startswith("doc_"):
+                parts = doc_id.split("_", 2)
+                if len(parts) >= 3:
+                    try:
+                        timestamp = int(parts[1])
+                        created_at = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+                    except ValueError:
+                        pass
+                    name = parts[2].replace("_", " ")
+                doc_type = "document"
+            elif doc_id.startswith("web_"):
+                parts = doc_id.split("_", 2)
+                if len(parts) >= 3:
+                    try:
+                        timestamp = int(parts[1])
+                        created_at = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+                    except ValueError:
+                        pass
+                    name = parts[2].replace("_", " ")
+                doc_type = "website"
+            elif doc_id.startswith("yt_"):
+                # YouTube video
+                video_id = doc_id[3:]
+                name = f"YouTube Video ({video_id})"
+                doc_type = "youtube"
+            elif doc_id == "default_doc":
+                name = "Indian Stock Market.pdf"
+                doc_type = "document"
+                created_at = "System Default"
+            
+            docs_map[doc_id] = {
+                "id": doc_id,
+                "name": name,
+                "type": doc_type,
+                "chunks_count": 0,
+                "created_at": created_at or "Unknown"
+            }
+        
+        docs_map[doc_id]["chunks_count"] += 1
+    
+    return list(docs_map.values())
+
+@app.get("/documents/{document_id}/preview")
+async def preview_document(document_id: str):
+    from semantic_search import collection
+    results = collection.get(
+        where={"document_id": document_id},
+        include=["documents", "metadatas"]
+    )
+    if not results or not results["documents"]:
+        raise HTTPException(status_code=404, detail="Document content not found")
+    
+    sorted_chunks = []
+    for i in range(len(results["documents"])):
+        doc_text = results["documents"][i]
+        meta = results["metadatas"][i]
+        sorted_chunks.append({
+            "text": doc_text,
+            "page": meta.get("page", 1),
+            "chunk_id": meta.get("chunk_id", i)
+        })
+    
+    sorted_chunks.sort(key=lambda x: (x["page"], x["chunk_id"]))
+    return sorted_chunks[:15]
+
+@app.delete("/documents/{document_id}")
+async def delete_document(document_id: str):
+    from semantic_search import collection
+    try:
+        collection.delete(where={"document_id": document_id})
+        with engine.begin() as conn:
+            conn.execute(text("UPDATE conversations SET document_id = NULL WHERE document_id = :did"), {"did": document_id})
+        return {"status": "success", "message": f"Document {document_id} deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+
 # --- Conversation Endpoints ---
+
 
 @app.get("/conversations")
 async def get_conversations(user_id: int = None):
@@ -385,26 +586,32 @@ async def ask_question(request: QuestionRequest):
         {"role": "user", "content": user_content}
     ]
 
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_ID,
-            messages=messages,
-            max_tokens=1000,
-            temperature=0.1
-        )
-        answer = completion.choices[0].message.content.strip()
-        
-        # Store in cache
-        query_cache.set(question, {"answer": answer, "citations": citations})
-        
-        # Save to DB
-        if conv_id:
-            save_msg(conv_id, 'assistant', answer, citations)
-        
-        return AnswerResponse(answer=answer, citations=citations, conversation_id=conv_id, cached=False)
-    except Exception as e:
-        print(f"Error calling AI model: {e}")
-        raise HTTPException(status_code=500, detail="I encountered an issue processing your request.")
+    retries = 3
+    for attempt in range(retries):
+        try:
+            completion = client.chat.completions.create(
+                model=MODEL_ID,
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.1
+            )
+            answer = completion.choices[0].message.content.strip()
+            
+            # Store in cache
+            query_cache.set(question, {"answer": answer, "citations": citations})
+            
+            # Save to DB
+            if conv_id:
+                save_msg(conv_id, 'assistant', answer, citations)
+            
+            return AnswerResponse(answer=answer, citations=citations, conversation_id=conv_id, cached=False)
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed calling AI model: {e}")
+            if attempt < retries - 1:
+                time.sleep(1)
+            else:
+                print(f"Error calling AI model after {retries} attempts: {e}")
+                raise HTTPException(status_code=500, detail="I encountered an issue processing your request.")
 
 # Serve static files (CSS, JS, Images)
 static_path = os.path.join(os.path.dirname(__file__), "static")

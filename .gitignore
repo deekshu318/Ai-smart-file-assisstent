@@ -11,3 +11,6 @@ chroma_db/
 **/*.db
 **/*.log
 **/__pycache__/
+*.db-wal
+*.db-shm
+scratch/

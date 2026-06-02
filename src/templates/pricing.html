@@ -1,0 +1,198 @@
+<!-- Pricing/Upgrade Plan Modal Overlay -->
+<div class="pricing-modal-overlay hidden" id="pricing-modal">
+    <!-- Close Button -->
+    <button class="btn-close-pricing" id="btn-close-pricing"><i class="fas fa-times"></i></button>
+    
+    <div class="pricing-container">
+        <!-- Header -->
+        <div class="pricing-header">
+            <h2>Try Plus free for 1 month</h2>
+            
+            <!-- Toggle Personal / Business -->
+            <div class="pricing-toggle-wrapper">
+                <div class="pricing-toggle-container">
+                    <button type="button" class="pricing-toggle-btn active" id="toggle-personal">Personal</button>
+                    <button type="button" class="pricing-toggle-btn" id="toggle-business">Business</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cards Grid -->
+        <div class="pricing-grid" id="pricing-grid-personal">
+            <!-- 1. Free Card -->
+            <div class="pricing-card">
+                <div class="pricing-card-header">
+                    <h3>Free</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span><span class="amount">0</span><span class="period">INR / month</span>
+                    </div>
+                    <p class="pricing-tagline">See what AI can do</p>
+                </div>
+                
+                <button class="pricing-btn current" disabled>Your current plan</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Core model</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited messages and uploads</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited image creation</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited memory</li>
+                </ul>
+            </div>
+            
+            <!-- 2. Go Card -->
+            <div class="pricing-card">
+                <div class="pricing-card-header">
+                    <h3>Go</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span><span class="amount">399</span><span class="period">INR / month <span class="tax-info">(inclusive of GST)</span></span>
+                    </div>
+                    <p class="pricing-tagline">Keep chatting with expanded access</p>
+                </div>
+                
+                <button class="pricing-btn action-btn select-plan-btn" data-plan="Go">Upgrade to Go</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Core model</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> More messages and uploads</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> More image creation</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Longer memory</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Expanded voice mode</li>
+                </ul>
+            </div>
+            
+            <!-- 3. Plus Card (Highlighted Tier) -->
+            <div class="pricing-card premium-highlight">
+                <div class="card-highlight-badge">LIMITED TIME</div>
+                <div class="pricing-card-header">
+                    <h3>Plus</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span><span class="original-price">1999</span><span class="amount">0</span><span class="period">INR <span class="promo-text">for the first month</span></span>
+                    </div>
+                    <p class="pricing-tagline">More access to advanced intelligence</p>
+                </div>
+                
+                <button class="pricing-btn claim-offer-btn select-plan-btn" data-plan="Plus">Claim free offer</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Advanced models</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Even more messages and uploads</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Advanced image creation with Thinking</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Expanded memory across chats</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Codex coding agent</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Expanded deep research</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Projects and custom GPTs</li>
+                </ul>
+                
+                <p class="promo-terms-footer">
+                    Promo terms apply. Promo pricing applies for 1 month. Starting Jun 20, 2026, ChatGPT Plus will continue at 1,999/month. Cancel anytime.
+                </p>
+            </div>
+            
+            <!-- 4. Pro Card -->
+            <div class="pricing-card">
+                <div class="pricing-card-header">
+                    <h3>Pro</h3>
+                    <div class="pricing-price">
+                        <span class="from-text">From</span> <span class="currency">₹</span><span class="amount">10,699</span><span class="period">INR / month <span class="tax-info">(inclusive of GST)</span></span>
+                    </div>
+                    <p class="pricing-tagline">Maximize your productivity</p>
+                </div>
+                
+                <button class="pricing-btn action-btn select-plan-btn" data-plan="Pro">Upgrade to Pro</button>
+                
+                <ul class="pricing-features">
+                    <li class="section-title">Everything in Plus and:</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> 5x or 20x more usage than Plus</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Frontier Pro model</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Maximum access to Codex</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Maximum deep research</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Unlimited core chat</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Unlimited and faster image creation</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Maximum memory and context</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Early access to experimental features</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Business Plan display state (Hidden by default) -->
+        <div class="pricing-grid pricing-grid-3 hidden" id="pricing-grid-business">
+            <!-- 1. Free Card -->
+            <div class="pricing-card">
+                <div class="pricing-card-header">
+                    <h3>Free</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span><span class="amount">0</span><span class="period">INR / month</span>
+                    </div>
+                    <p class="pricing-tagline">See what AI can do</p>
+                </div>
+                
+                <button class="pricing-btn current" disabled>Your current plan</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Core model</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited messages and uploads</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited image creation</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Limited memory</li>
+                </ul>
+            </div>
+
+            <!-- 2. Business ChatGPT & Codex Card -->
+            <div class="pricing-card premium-highlight">
+                <div class="pricing-card-header">
+                    <h3>Business ChatGPT & Codex</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span><span class="amount">1,800</span><span class="period">INR / month <span class="tax-info">(exclusive of GST)</span></span>
+                    </div>
+                    <p class="pricing-tagline">Get more work done with AI for teams</p>
+                </div>
+                
+                <button class="pricing-btn claim-offer-btn select-plan-btn" data-plan="Business">Upgrade</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Advanced models for work</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Unlimited core chat and uploads</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> More images, videos, and data analysis</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Integrations and company knowledge</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Codex coding agent</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Tools for teams like projects & custom GPTs</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Advanced security with SSO, MFA, & more</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Privacy built in; data never used for training</li>
+                </ul>
+
+                <p class="promo-terms-footer" style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.75rem; font-size: 0.68rem; color: rgba(255, 255, 255, 0.35);">
+                    For 2+ seats, billed annually. Unlimited subject to abuse guardrails. GST excluded at checkout with a valid GST ID.
+                </p>
+            </div>
+
+            <!-- 3. Business Codex Card -->
+            <div class="pricing-card">
+                <div class="pricing-card-header">
+                    <h3>Business Codex</h3>
+                    <div class="pricing-price">
+                        <span class="amount">Usage pricing</span>
+                    </div>
+                    <p class="pricing-tagline">For software development teams</p>
+                </div>
+                
+                <button class="pricing-btn action-btn select-plan-btn" data-plan="Codex">Upgrade</button>
+                
+                <ul class="pricing-features">
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> AI-powered software engineering</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Automated code and security reviews</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Automate tasks on your computer</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Take action across your documents, tools, and codebases</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Built in worktrees and cloud environments for multi-agent workflows</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> No training on your data; SAML security</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> Easy member, role, & billing management</li>
+                    <li><span class="feature-icon"><i class="fas fa-circle"></i></span> No fixed seat fee; pay as you go based on usage</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Footer links -->
+        <div class="pricing-footer">
+            <span class="footer-link-text">Have an existing plan? <a href="#" id="pricing-billing-help">See billing help</a></span>
+            <span class="footer-link-text" id="pricing-learn-more">This plan may include ads. <a href="#">Learn more</a></span>
+        </div>
+    </div>
+</div>

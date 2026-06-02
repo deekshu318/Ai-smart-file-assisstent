@@ -40,3 +40,6 @@ requests
 fastapi
 uvicorn
 passlib[bcrypt]
+youtube-transcript-api
+yt-dlp
+beautifulsoup4

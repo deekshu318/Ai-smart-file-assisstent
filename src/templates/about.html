@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About | AI Smart File</title>
-    <link rel="stylesheet" href="/static/style.css?v=7">
+    <link rel="stylesheet" href="/static/style.css?v=14">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body class="about-page">
     <!-- Navbar -->
     <nav class="landing-nav">
@@ -19,7 +23,7 @@
                 <span class="brand-name">AI Smart File</span>
             </a>
             <div class="nav-links">
-                <a href="/#features" class="nav-link">Features</a>
+                <a href="/" class="nav-link">Features</a>
                 <a href="/about" class="nav-link active">About</a>
             </div>
             <div class="nav-actions">
@@ -32,32 +36,13 @@
     <section class="about-hero">
         <div class="hero-container">
             <span class="badge">About the Project</span>
-            <h1 class="about-title">Revolutionizing Document Intelligence with <span class="gradient-text">AI Smart File</span></h1>
-            <p class="about-subtitle">Empowering individuals and organizations to unlock the hidden knowledge within their documents, videos, and web sources through cutting-edge Artificial Intelligence.</p>
+            <h1 class="about-title">Revolutionizing Document Intelligence with <span class="gradient-text">AI Smart
+                    File</span></h1>
+            <p class="about-subtitle">Empowering individuals and organizations to unlock the hidden knowledge within
+                their documents, videos, and web sources through cutting-edge Artificial Intelligence.</p>
         </div>
     </section>
 
-    <!-- Project Mission -->
-    <section class="about-content">
-        <div class="content-container">
-            <div class="content-grid">
-                <div class="content-text">
-                    <h2>Our Mission</h2>
-                    <p>At AI Smart File, we believe that information shouldn't be trapped in static files. Our mission is to transform your data into a dynamic, interactive conversation. By leveraging state-of-the-art Large Language Models and semantic retrieval technology, we bridge the gap between vast document libraries and instant, actionable insights.</p>
-                    <p>Whether you're a researcher analyzing complex reports, a student studying for exams, or a professional managing large-scale documentation, AI Smart File is designed to be your ultimate cognitive companion.</p>
-                </div>
-                <div class="content-image">
-                    <div class="abstract-card">
-                        <div class="card-line"></div>
-                        <div class="card-line short"></div>
-                        <div class="card-dots">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Key Values -->
     <section class="about-values">
@@ -70,17 +55,20 @@
                 <div class="value-card">
                     <div class="value-icon"><i class="fas fa-brain"></i></div>
                     <h3>Semantic Intelligence</h3>
-                    <p>Our system doesn't just look for words; it understands concepts. This ensures you get answers that are contextually relevant and deeply insightful.</p>
+                    <p>Our system doesn't just look for words; it understands concepts. This ensures you get answers
+                        that are contextually relevant and deeply insightful.</p>
                 </div>
                 <div class="value-card">
                     <div class="value-icon"><i class="fas fa-shield-alt"></i></div>
                     <h3>Privacy First</h3>
-                    <p>Your data is yours alone. We prioritize local-context processing and secure indexing to ensure your sensitive information never leaves your control.</p>
+                    <p>Your data is yours alone. We prioritize local-context processing and secure indexing to ensure
+                        your sensitive information never leaves your control.</p>
                 </div>
                 <div class="value-card">
                     <div class="value-icon"><i class="fas fa-check-double"></i></div>
                     <h3>Verifiable Truth</h3>
-                    <p>We eliminate AI hallucinations by grounding every answer in your specific sources, providing clickable citations for total transparency.</p>
+                    <p>We eliminate AI hallucinations by grounding every answer in your specific sources, providing
+                        clickable citations for total transparency.</p>
                 </div>
             </div>
         </div>
@@ -92,45 +80,215 @@
     </footer>
 
     <style>
-        .about-page { background: #ffffff; color: #1a1a2e; overflow-x: hidden; font-family: 'Inter', sans-serif; }
-        .about-hero { padding: 8rem 2rem 4rem; text-align: center; background: radial-gradient(circle at top, rgba(124, 92, 252, 0.03) 0%, transparent 70%); }
-        .hero-container { max-width: 900px; margin: 0 auto; }
-        .badge { display: inline-block; padding: 0.5rem 1rem; background: rgba(124, 92, 252, 0.1); color: #7c5cfc; border-radius: 100px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; }
-        .about-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
-        .about-subtitle { font-size: 1.15rem; color: #64748b; line-height: 1.6; max-width: 700px; margin: 0 auto; }
-        
-        .about-content { padding: 6rem 2rem; }
-        .content-container { max-width: 1100px; margin: 0 auto; }
-        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
-        .content-text h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.25rem; margin-bottom: 1.5rem; }
-        .content-text p { color: #64748b; line-height: 1.7; margin-bottom: 1.25rem; font-size: 1.05rem; }
-        
-        .abstract-card { background: #1a1a2e; width: 100%; height: 300px; border-radius: 24px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 3rem; gap: 1rem; box-shadow: 0 30px 60px rgba(0,0,0,0.1); }
-        .card-line { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; width: 80%; }
-        .card-line.short { width: 50%; }
-        .card-dots { display: flex; gap: 0.5rem; margin-top: 1rem; }
-        .card-dots span { width: 12px; height: 12px; border-radius: 50%; background: #7c5cfc; }
-        .card-dots span:nth-child(2) { background: #a855f7; }
-        .card-dots span:nth-child(3) { background: #5b8aff; }
-        
-        .about-values { padding: 6rem 2rem; background: #f8fafc; }
-        .values-container { max-width: 1100px; margin: 0 auto; }
-        .section-header { text-align: center; margin-bottom: 4rem; }
-        .section-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: 2.25rem; margin-bottom: 1rem; }
-        .section-header p { color: #64748b; }
-        .values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
-        .value-card { background: #ffffff; padding: 2.5rem; border-radius: 20px; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
-        .value-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
-        .value-icon { width: 50px; height: 50px; background: #1a1a2e; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1.5rem; }
-        .value-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; margin-bottom: 1rem; }
-        .value-card p { color: #64748b; line-height: 1.6; font-size: 0.95rem; }
-        
-        .about-footer { padding: 4rem 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem; border-top: 1px solid #e2e8f0; }
+        .about-page {
+            background: #ffffff;
+            color: #1a1a2e;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .about-hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            background: radial-gradient(circle at top, rgba(124, 92, 252, 0.03) 0%, transparent 70%);
+        }
+
+        .hero-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(124, 92, 252, 0.1);
+            color: #7c5cfc;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .about-subtitle {
+            font-size: 1.15rem;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .about-content {
+            padding: 6rem 2rem;
+        }
+
+        .content-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .content-text h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .content-text p {
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+            font-size: 1.05rem;
+        }
+
+        .abstract-card {
+            background: #1a1a2e;
+            width: 100%;
+            height: 300px;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3rem;
+            gap: 1rem;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-line {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            width: 80%;
+        }
+
+        .card-line.short {
+            width: 50%;
+        }
+
+        .card-dots {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .card-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #7c5cfc;
+        }
+
+        .card-dots span:nth-child(2) {
+            background: #a855f7;
+        }
+
+        .card-dots span:nth-child(3) {
+            background: #5b8aff;
+        }
+
+        .about-values {
+            padding: 6rem 2rem;
+            background: #f8fafc;
+        }
+
+        .values-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: #64748b;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .value-card {
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .value-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        .value-icon {
+            width: 50px;
+            height: 50px;
+            background: #1a1a2e;
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .value-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .value-card p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .about-footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            border-top: 1px solid #e2e8f0;
+        }
 
         @media (max-width: 768px) {
-            .content-grid { grid-template-columns: 1fr; gap: 2rem; }
-            .about-hero { padding-top: 6rem; }
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .about-hero {
+                padding-top: 6rem;
+            }
         }
     </style>
 </body>
+
 </html>

@@ -9,7 +9,7 @@
             </div>
             <div class="nav-links">
                 <div class="nav-dropdown">
-                    <a href="#features" class="nav-link">Features <i class="fas fa-chevron-down"></i></a>
+                    <a href="#features" id="link-features" class="nav-link">Features <i class="fas fa-chevron-down"></i></a>
                     <div class="dropdown-menu">
                         <div class="dropdown-item">
                             <div class="item-icon"><i class="fas fa-globe"></i></div>
@@ -62,7 +62,7 @@
             </p>
             <div class="hero-ctas">
                 <button id="btn-hero-get-started" class="btn-primary-lg">Get Started Free &rarr;</button>
-                <button class="btn-secondary-lg">See Features</button>
+                <button id="btn-see-features" class="btn-secondary-lg">See Features</button>
             </div>
 
             <!-- Social Proof -->
@@ -91,6 +91,51 @@
                 <div class="footer-item"><i class="fas fa-check"></i> Free plan — no credit card</div>
                 <div class="footer-item"><i class="fas fa-globe"></i> 50+ languages</div>
                 <div class="footer-item"><i class="fas fa-lock"></i> Your data stays private</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="features-container">
+            <div class="features-header">
+                <span class="features-badge">Key Capabilities</span>
+                <h2>Everything you need to <span class="gradient-text">master your files</span></h2>
+                <p>Unlock deep semantic search, interactive conversations, and unified knowledge processing for documents, videos, and websites.</p>
+            </div>
+            
+            <div class="features-grid">
+                <!-- Feature 1: Document Chat (RAG) -->
+                <div class="feature-card">
+                    <div class="feature-icon font-gradient-1"><i class="fas fa-comments"></i></div>
+                    <h3>Interactive Document Chat</h3>
+                    <p>Ask questions in natural language and receive comprehensive answers grounded directly in your uploaded sources. Instant RAG powered responses complete with interactive citations.</p>
+                    <div class="feature-tag">Core Feature</div>
+                </div>
+
+                <!-- Feature 2: Universal Uploads -->
+                <div class="feature-card">
+                    <div class="feature-icon font-gradient-2"><i class="fas fa-file-import"></i></div>
+                    <h3>Multi-Source Uploads</h3>
+                    <p>Bring all your knowledge together. Seamlessly upload PDF documents, plain Text files, Microsoft Word files (.docx), PowerPoint presentations (.pptx), and scrape public websites or extract YouTube video transcripts.</p>
+                    <div class="feature-tag">Universal</div>
+                </div>
+
+                <!-- Feature 3: Context-Aware Semantic Search -->
+                <div class="feature-card">
+                    <div class="feature-icon font-gradient-3"><i class="fas fa-search-plus"></i></div>
+                    <h3>Contextual Semantic Search</h3>
+                    <p>Go beyond rigid keyword matching. Our AI-driven vector embeddings search the deeper meaning and conceptual context of your query to surface the exact relevant paragraphs instantly.</p>
+                    <div class="feature-tag">AI-Driven</div>
+                </div>
+
+                <!-- Feature 4: Interactive Document Library -->
+                <div class="feature-card">
+                    <div class="feature-icon font-gradient-4"><i class="fas fa-folder-open"></i></div>
+                    <h3>Smart Document Library</h3>
+                    <p>Take full control of your knowledge base. Preview parsed document chunks, view exact processing metadata, organize files, and manage your vector collection with an elegant, responsive dashboard.</p>
+                    <div class="feature-tag">Dashboard</div>
+                </div>
             </div>
         </div>
     </section>
