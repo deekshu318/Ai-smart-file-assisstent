@@ -480,6 +480,34 @@ def save_msg(cid, role, content, citations=None):
         conn.execute(text("INSERT INTO messages (conversation_id, role, content, citations) VALUES (:cid, :r, :c, :cit)"),
                        {"cid": cid, "r": role, "c": content, "cit": json.dumps(citations) if citations else None})
 
+def is_general_query(query: str) -> bool:
+    q = query.strip().lower()
+    
+    # Clean greeting (remove non-alphanumeric and non-space characters)
+    import re
+    q_clean_greeting = re.sub(r'[^\w\s]', '', q).strip()
+    
+    # Common greetings and basic conversational queries
+    greetings = {
+        "hi", "hello", "hey", "howdy", "hola", "yo", "greetings",
+        "good morning", "good afternoon", "good evening",
+        "how are you", "how is it going", "hows it going", "what is up", "whats up",
+        "who are you", "what are you", "what can you do", "help",
+        "thank you", "thanks", "tq", "bye", "goodbye", "exit"
+    }
+    if q_clean_greeting in greetings:
+        return True
+        
+    # Simple math: e.g. "2+3", "2 + 3", "2 * 3 - 1", "10 / 2"
+    if re.match(r'^[\d\s+\-*/()=%.]+$', q) and any(op in q for op in ['+', '-', '*', '/', '=']):
+        return True
+    
+    # Match "what is 2 + 3" or similar
+    if re.match(r'^(what is|calculate|solve)\s+[\d\s+\-*/()=%.]+$', q):
+        return True
+        
+    return False
+
 @app.post("/ask", response_model=AnswerResponse)
 async def ask_question(request: QuestionRequest):
     question = request.question
@@ -520,66 +548,91 @@ async def ask_question(request: QuestionRequest):
             cached=True
         )
 
-    # Always perform semantic search for the Indian Stock Market domain
-    results = semantic_search(question, document_id=doc_id, top_k=10)
-    
-    citations = []
-    if not results["documents"] or len(results["documents"][0]) == 0:
-        ans = "content is not present in pdf"
-        if conv_id:
-            save_msg(conv_id, 'assistant', ans)
-        return AnswerResponse(answer=ans, citations=[], conversation_id=conv_id)
+    # Check if this is a general greeting, math, or basic conversational query
+    is_general = is_general_query(question)
 
-    # Detect if the query is specifically about document structure (TOC/Index Page)
-    # Using word boundaries and more specific terms to avoid false positives
-    query_lower = question.lower()
-    structure_terms = [r"\bindex page\b", r"\btable of contents\b", r"\btoc\b", r"\bchapters\b", r"\blist of topics\b"]
-    import re
-    is_structure_query = any(re.search(term, query_lower) for term in structure_terms)
-    
-    # Format context and collect citations
-    context_parts = []
-    has_actual_index = False
-    for i, doc in enumerate(results["documents"][0]):
-        page = results['metadatas'][0][i]['page']
+    if is_general:
+        system_prompt = (
+            "You are a helpful and professional AI assistant. "
+            "Answer the user's greeting, conversational query, or general knowledge/math question directly, "
+            "clearly, and politely. You do not need to refer to any PDF document or context."
+        )
+        user_content = question
+        citations = []
+    else:
+        # Always perform semantic search for the Indian Stock Market domain
+        results = semantic_search(question, document_id=doc_id, top_k=10)
         
-        # Only label as primary index if it's a structure query or explicitly mentions contents
-        if page == 5 and ("INDEX" in doc.upper() or "CONTENTS" in doc.upper()) and is_structure_query:
-            context_parts.append(f"--- [PRIMARY DOCUMENT INDEX / TABLE OF CONTENTS] ---\n(Page {page}) {doc}")
-            has_actual_index = True
+        # If no documents are returned (no index/data uploaded yet), we can check:
+        # If there's no doc_id and database has no chunks, we can answer generally instead of failing.
+        if not results["documents"] or len(results["documents"][0]) == 0:
+            if not doc_id:
+                # Treat as general chat if no document selected and empty database
+                system_prompt = (
+                    "You are a helpful and professional AI assistant. "
+                    "Answer the user's query directly, clearly, and politely."
+                )
+                user_content = question
+                citations = []
+            else:
+                ans = "content is not present in pdf"
+                if conv_id:
+                    save_msg(conv_id, 'assistant', ans)
+                return AnswerResponse(answer=ans, citations=[], conversation_id=conv_id)
         else:
-            context_parts.append(f"(Page {page}) {doc}")
+            # Detect if the query is specifically about document structure (TOC/Index Page)
+            query_lower = question.lower()
+            structure_terms = [r"\bindex page\b", r"\btable of contents\b", r"\btoc\b", r"\bchapters\b", r"\blist of topics\b"]
+            import re
+            is_structure_query = any(re.search(term, query_lower) for term in structure_terms)
             
-        if page not in citations:
-            citations.append(page)
-    
-    # If it's a structure query and we found the index, prioritize it heavily
-    if is_structure_query and has_actual_index:
-        # Move index chunks to the very top and maybe prune others to avoid distraction
-        priority_parts = [p for p in context_parts if "[PRIMARY DOCUMENT INDEX" in p]
-        other_parts = [p for p in context_parts if "[PRIMARY DOCUMENT INDEX" not in p]
-        context = "\n\n".join(priority_parts + other_parts[:3]) # Limit others to avoid noise
-    else:
-        context = "\n\n".join(context_parts)
-        
-    citations.sort()
-    
-    if is_structure_query:
-        system_prompt = (
-            "You are a professional AI assistant. The user is asking about the document's structure (Table of Contents / Index Page). "
-            "PRIORITIZE the information on Page 5 which is titled 'INDEX' and list the chapters/topics found there. "
-            "DO NOT talk about stock market indices like NIFTY 50 unless they are listed as chapters in the Table of Contents. "
-            "Be clear and precise about what each page contains according to the index."
-        )
-    else:
-        system_prompt = (
-            "You are a professional AI assistant. "
-            "Use the provided context to answer the question thoroughly. "
-            "If the information is not present in the context, respond with: 'content is not present in pdf'. "
-            "Prioritize actual content about the topic over structural information like index pages or chapter lists, unless specifically asked. "
-            "Format your response using Markdown for clarity. Cite page numbers."
-        )
-    user_content = f"Context:\n{context}\n\nQuestion: {question}"
+            # Format context and collect citations
+            context_parts = []
+            has_actual_index = False
+            citations = []
+            for i, doc in enumerate(results["documents"][0]):
+                page = results['metadatas'][0][i]['page']
+                
+                # Only label as primary index if it's a structure query or explicitly mentions contents
+                if page == 5 and ("INDEX" in doc.upper() or "CONTENTS" in doc.upper()) and is_structure_query:
+                    context_parts.append(f"--- [PRIMARY DOCUMENT INDEX / TABLE OF CONTENTS] ---\n(Page {page}) {doc}")
+                    has_actual_index = True
+                else:
+                    context_parts.append(f"(Page {page}) {doc}")
+                    
+                if page not in citations:
+                    citations.append(page)
+            
+            # If it's a structure query and we found the index, prioritize it heavily
+            if is_structure_query and has_actual_index:
+                # Move index chunks to the very top and maybe prune others to avoid distraction
+                priority_parts = [p for p in context_parts if "[PRIMARY DOCUMENT INDEX" in p]
+                other_parts = [p for p in context_parts if "[PRIMARY DOCUMENT INDEX" not in p]
+                context = "\n\n".join(priority_parts + other_parts[:3]) # Limit others to avoid noise
+            else:
+                context = "\n\n".join(context_parts)
+                
+            citations.sort()
+            
+            if is_structure_query:
+                system_prompt = (
+                    "You are a professional AI assistant. The user is asking about the document's structure (Table of Contents / Index Page). "
+                    "PRIORITIZE the information on Page 5 which is titled 'INDEX' and list the chapters/topics found there. "
+                    "DO NOT talk about stock market indices like NIFTY 50 unless they are listed as chapters in the Table of Contents. "
+                    "Be clear and precise about what each page contains according to the index."
+                )
+            else:
+                system_prompt = (
+                    "You are a professional AI assistant. "
+                    "Your task is to answer the user's question about the uploaded document based on the provided context. "
+                    "Adopt a highly formal, professional, and structured tone. "
+                    "If the user asks for suggestions, recommendations, summaries, or analyses related to the document, "
+                    "synthesize these professionally using the provided context. "
+                    "If the question is about the document but the context does not contain any relevant information to answer it, "
+                    "respond with: 'content is not present in pdf'. "
+                    "Format your response using Markdown for clarity. Cite page numbers where applicable."
+                )
+            user_content = f"Context:\n{context}\n\nQuestion: {question}"
 
     messages = [
         {"role": "system", "content": system_prompt},
