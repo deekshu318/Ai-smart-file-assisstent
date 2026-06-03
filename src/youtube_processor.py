@@ -85,15 +85,15 @@ def get_transcript_via_ytdlp_json3(url):
                 break
                 
         if not en_subs:
-            return None
+            raise RuntimeError("No English or fallback subtitles found in yt-dlp metadata.")
             
         json3_url = next((s['url'] for s in en_subs if s.get('ext') == 'json3'), None)
         if not json3_url:
-            return None
+            raise RuntimeError(f"No json3 format URL found in subtitles metadata. Available: {[s.get('ext') for s in en_subs]}")
             
         response = requests.get(json3_url, timeout=10)
         if response.status_code != 200:
-            return None
+            raise RuntimeError(f"Failed to fetch json3 subtitles from URL, status code: {response.status_code}")
             
         data = response.json()
         events = data.get('events', [])
@@ -123,7 +123,7 @@ def get_transcript_via_ytdlp_json3(url):
         
     except Exception as e:
         print(f"Fallback yt-dlp json3 extraction failed: {e}")
-        return None
+        raise e
 
 def process_youtube_link(url, document_id=None):
     """Fetch transcript, embed, and store in ChromaDB."""
