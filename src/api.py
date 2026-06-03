@@ -627,11 +627,11 @@ templates = Jinja2Templates(directory=template_path)
 
 @app.get("/")
 async def read_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html", {"request": request})
 
 @app.get("/about")
 async def read_about(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse(request, "about.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn
