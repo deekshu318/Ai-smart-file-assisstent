@@ -9,33 +9,21 @@ python-pptx
 # Text cleaning & utilities
 regex
 tqdm
-
-# NLP & embeddings
-sentence-transformers
 nltk
-
-# Vector database / similarity search
-faiss-cpu
 
 # Data handling
 numpy
 pandas
 
-# LLM integration (optional but recommended)
+# LLM integration
 openai
 langchain
-
-# App / API (optional UI)
-streamlit
-flask
-
-transformers
-torch
-sentencepiece
-google-genai
 python-dotenv
-sentence-transformers>=2.2.0
+
+# Vector database / similarity search
 chromadb
+
+# App / API
 requests
 fastapi
 uvicorn

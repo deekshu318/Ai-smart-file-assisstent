@@ -1,9 +1,7 @@
 import chromadb
-from sentence_transformers import SentenceTransformer
 import os
 from retrieve_chunks import expand_question_words, normalize
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
+from embeddings import convert_chunks_to_vectors
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
@@ -19,7 +17,7 @@ def semantic_search(query, document_id=None, top_k=5):
     It uses vector similarity but boosts results that match key keywords.
     Optionally filters by document_id.
     """
-    query_vector = model.encode([query], convert_to_numpy=True)
+    query_vector = convert_chunks_to_vectors([query])
     # Get keywords including synonyms
     q_words = expand_question_words(query)
 
