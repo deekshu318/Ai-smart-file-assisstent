@@ -210,7 +210,7 @@ def process_youtube_link(url, document_id=None):
         
     except Exception as e:
         print(f"Error processing YouTube link: {e}")
-        return None
+        raise e
 
 if __name__ == "__main__":
     # Test
