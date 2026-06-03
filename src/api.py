@@ -292,6 +292,19 @@ async def add_youtube_source(request: YoutubeRequest):
         print(f"YouTube processing error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/test-ytdlp")
+async def test_ytdlp(url: str):
+    import traceback
+    try:
+        from youtube_processor import get_transcript_via_ytdlp_json3
+        res = get_transcript_via_ytdlp_json3(url)
+        if res:
+            return {"status": "success", "length": len(res), "sample": [{"start": r.start, "text": r.text} for r in res[:5]]}
+        return {"status": "failed", "reason": "Returned None"}
+    except Exception as e:
+        tb = traceback.format_exc()
+        return {"status": "error", "message": str(e), "traceback": tb}
+
 @app.post("/website")
 async def add_website_source(request: WebsiteRequest):
     url = request.url
