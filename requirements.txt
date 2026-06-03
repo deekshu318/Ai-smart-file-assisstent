@@ -32,3 +32,4 @@ youtube-transcript-api
 yt-dlp
 beautifulsoup4
 sqlalchemy
+jinja2
