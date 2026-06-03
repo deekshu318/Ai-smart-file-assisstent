@@ -40,6 +40,91 @@ def get_video_metadata(url):
                 'author': 'Unknown',
             }
 
+class SubtitleSegment:
+    def __init__(self, text, start):
+        self.text = text
+        self.start = start
+
+def get_transcript_via_ytdlp_json3(url):
+    """Fallback method using yt-dlp to extract the JSON3 timedtext subtitle URL and download it."""
+    import requests
+    
+    ydl_opts = {
+        'skip_download': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'quiet': True,
+        'no_warnings': True,
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            
+        subtitles = info.get('subtitles', {}) or {}
+        auto_captions = info.get('automatic_captions', {}) or {}
+        
+        en_subs = subtitles.get('en', []) or subtitles.get('en-US', []) or []
+        if not en_subs:
+            for lang in subtitles:
+                if lang.startswith('en'):
+                    en_subs = subtitles[lang]
+                    break
+                    
+        if not en_subs:
+            en_subs = auto_captions.get('en', []) or auto_captions.get('en-US', []) or []
+            if not en_subs:
+                for lang in auto_captions:
+                    if lang.startswith('en'):
+                        en_subs = auto_captions[lang]
+                        break
+                        
+        if not en_subs:
+            for lang in auto_captions:
+                en_subs = auto_captions[lang]
+                break
+                
+        if not en_subs:
+            return None
+            
+        json3_url = next((s['url'] for s in en_subs if s.get('ext') == 'json3'), None)
+        if not json3_url:
+            return None
+            
+        response = requests.get(json3_url, timeout=10)
+        if response.status_code != 200:
+            return None
+            
+        data = response.json()
+        events = data.get('events', [])
+        
+        transcript = []
+        for event in events:
+            segs = event.get('segs', [])
+            if not segs:
+                continue
+                
+            text = "".join(s.get('utf8', '') for s in segs).strip()
+            text = re.sub(r'\s+', ' ', text).strip()
+            
+            if not text or text == '\n':
+                continue
+                
+            start_ms = event.get('tStartMs', 0)
+            start_sec = start_ms / 1000.0
+            
+            if not transcript or transcript[-1]["text"] != text:
+                transcript.append({
+                    "text": text,
+                    "start": start_sec
+                })
+                
+        return [SubtitleSegment(item["text"], item["start"]) for item in transcript]
+        
+    except Exception as e:
+        print(f"Fallback yt-dlp json3 extraction failed: {e}")
+        return None
+
 def process_youtube_link(url, document_id=None):
     """Fetch transcript, embed, and store in ChromaDB."""
     video_id = get_video_id(url)
@@ -57,9 +142,19 @@ def process_youtube_link(url, document_id=None):
         metadata = get_video_metadata(url)
         video_title = metadata['title']
         
-        # Get transcript
-        ytt_api = YouTubeTranscriptApi()
-        transcript_list = ytt_api.fetch(video_id)
+        # Get transcript (try YouTubeTranscriptApi first, then fallback)
+        transcript_list = None
+        try:
+            ytt_api = YouTubeTranscriptApi()
+            transcript_list = ytt_api.fetch(video_id)
+        except Exception as e:
+            print(f"YouTubeTranscriptApi failed: {e}. Trying fallback via yt-dlp json3...")
+            
+        if not transcript_list:
+            transcript_list = get_transcript_via_ytdlp_json3(url)
+            
+        if not transcript_list:
+            raise RuntimeError("Could not retrieve captions/transcript from YouTube video. Please ensure captions are enabled on the video.")
         
         # Combine segments into chunks of roughly 1000 characters
         # We'll preserve timestamps in metadata if possible
@@ -119,6 +214,6 @@ def process_youtube_link(url, document_id=None):
 
 if __name__ == "__main__":
     # Test
-    test_url = "https://www.youtube.com/watch?v=MIQmrBxp2-E"
+    test_url = "https://youtu.be/YqkGauqNP9k?si=sTFOnP8qr3q5XqQ7"
     result = process_youtube_link(test_url)
     print(f"Result: {result}")
