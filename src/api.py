@@ -20,7 +20,10 @@ from website_processor import process_website_link
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 # Database Initialization
-DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")
+if os.path.exists("/data") and os.access("/data", os.W_OK):
+    DB_PATH = "/data/users.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")
 
 # SQLAlchemy Setup for Concurrency
 engine = create_engine(
@@ -237,7 +240,10 @@ async def update_profile(request: ProfileUpdateRequest):
 
 
 # --- File Upload Endpoints ---
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+if os.path.exists("/data") and os.access("/data", os.W_OK):
+    UPLOAD_DIR = "/data/uploads"
+else:
+    UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 

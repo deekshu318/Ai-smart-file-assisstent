@@ -2,7 +2,10 @@ import chromadb
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+if os.path.exists("/data") and os.access("/data", os.W_OK):
+    CHROMA_PATH = "/data/chroma_db"
+else:
+    CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
 client = chromadb.PersistentClient(path=CHROMA_PATH)
 collection = client.get_or_create_collection(name="indian_stock_market_chunks")
 

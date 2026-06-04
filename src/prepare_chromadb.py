@@ -5,7 +5,10 @@ from extract_text import text_extraction
 from embeddings import convert_chunks_to_vectors
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
+if os.path.exists("/data") and os.access("/data", os.W_OK):
+    CHROMA_PATH = "/data/chroma_db"
+else:
+    CHROMA_PATH = os.path.join(BASE_DIR, "chroma_db")
 
 # Use PersistentClient for proper persistence
 client = chromadb.PersistentClient(path=CHROMA_PATH)
