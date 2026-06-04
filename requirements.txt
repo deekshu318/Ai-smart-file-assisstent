@@ -34,3 +34,4 @@ beautifulsoup4
 sqlalchemy
 jinja2
 python-multipart
+pg8000

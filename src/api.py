@@ -20,64 +20,114 @@ from website_processor import process_website_link
 pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 # Database Initialization
-if os.path.exists("/data") and os.access("/data", os.W_OK):
-    DB_PATH = "/data/users.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Support postgresql connection string format with pg8000 driver
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
+    elif DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
+        
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=10, 
+        max_overflow=20
+    )
 else:
-    DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")
-
-# SQLAlchemy Setup for Concurrency
-engine = create_engine(
-    f"sqlite:///{DB_PATH}", 
-    connect_args={"check_same_thread": False, "timeout": 15},
-    pool_size=10, 
-    max_overflow=20
-)
+    if os.path.exists("/data") and os.access("/data", os.W_OK):
+        DB_PATH = "/data/users.db"
+    else:
+        DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")
+        
+    engine = create_engine(
+        f"sqlite:///{DB_PATH}", 
+        connect_args={"check_same_thread": False, "timeout": 15},
+        pool_size=10, 
+        max_overflow=20
+    )
 
 def init_db():
+    dialect = engine.dialect.name
     with engine.begin() as conn:
-        # Enable Write-Ahead Logging (WAL) mode for better SQLite concurrency in production
-        conn.execute(text("PRAGMA journal_mode=WAL;"))
+        if dialect == "sqlite":
+            conn.execute(text("PRAGMA journal_mode=WAL;"))
+            
         # Users table
-        conn.execute(text('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                full_name TEXT NOT NULL,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                hashed_password TEXT NOT NULL
-            )
-        '''))
-        
-        # Add avatar column dynamically if it doesn't exist
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
-        except Exception:
-            pass
-        
+        if dialect == "postgresql":
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    full_name TEXT NOT NULL,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    hashed_password TEXT NOT NULL,
+                    avatar TEXT
+                )
+            '''))
+        else: # SQLite
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    full_name TEXT NOT NULL,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    hashed_password TEXT NOT NULL
+                )
+            '''))
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
+            except Exception:
+                pass
+            
         # Conversations table
-        conn.execute(text('''
-            CREATE TABLE IF NOT EXISTS conversations (
-                id TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                document_id TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        '''))
-        
+        if dialect == "postgresql":
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id VARCHAR(255) PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    document_id VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                )
+            '''))
+        else: # SQLite
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    document_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            '''))
+            
         # Messages table
-        conn.execute(text('''
-            CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                conversation_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                citations TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (conversation_id) REFERENCES conversations (id)
-            )
-        '''))
+        if dialect == "postgresql":
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id SERIAL PRIMARY KEY,
+                    conversation_id VARCHAR(255) NOT NULL,
+                    role VARCHAR(50) NOT NULL,
+                    content TEXT NOT NULL,
+                    citations TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (conversation_id) REFERENCES conversations (id) ON DELETE CASCADE
+                )
+            '''))
+        else: # SQLite
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    conversation_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    citations TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+                )
+            '''))
 
 init_db()
 
