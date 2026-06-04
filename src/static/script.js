@@ -83,9 +83,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Toggle Password Visibility ---
+    function setupPasswordToggle(toggleId, inputId) {
+        const toggleIcon = document.getElementById(toggleId);
+        const passwordInput = document.getElementById(inputId);
+        if (toggleIcon && passwordInput) {
+            toggleIcon.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                if (type === 'password') {
+                    toggleIcon.classList.remove('fa-eye-slash');
+                    toggleIcon.classList.add('fa-eye');
+                } else {
+                    toggleIcon.classList.remove('fa-eye');
+                    toggleIcon.classList.add('fa-eye-slash');
+                }
+            });
+        }
+    }
+    setupPasswordToggle('toggle-login-password', 'password');
+    setupPasswordToggle('toggle-reg-password', 'reg-password');
+
     // --- Auth Logic Helpers ---
-    function showAuthMessage(msg, type = 'error') {
-        const statusEl = document.getElementById('auth-status-message');
+    function showAuthMessage(msg, type = 'error', isRegister = false) {
+        const id = isRegister ? 'register-status-message' : 'auth-status-message';
+        const statusEl = document.getElementById(id);
         if (!statusEl) return;
         statusEl.textContent = msg;
         statusEl.className = `status-message ${type}`;
@@ -146,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goToRegister.onclick = (e) => {
             e.preventDefault();
             document.getElementById('auth-status-message')?.classList.add('hidden');
+            document.getElementById('register-status-message')?.classList.add('hidden');
             loginCard?.classList.add('hidden');
             registerCard?.classList.remove('hidden');
         };
@@ -155,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goToLogin.onclick = (e) => {
             e.preventDefault();
             document.getElementById('auth-status-message')?.classList.add('hidden');
+            document.getElementById('register-status-message')?.classList.add('hidden');
             registerCard?.classList.add('hidden');
             loginCard?.classList.remove('hidden');
         };
@@ -224,12 +248,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 password: document.getElementById('reg-password').value
             };
 
+            // Password strength validation
+            if (payload.password.length < 8) {
+                showAuthMessage('Password must be at least 8 characters long.', 'error', true);
+                return;
+            }
+            if (!/[A-Z]/.test(payload.password)) {
+                showAuthMessage('Password must contain at least one uppercase letter.', 'error', true);
+                return;
+            }
+            if (!/[0-9]/.test(payload.password)) {
+                showAuthMessage('Password must contain at least one number.', 'error', true);
+                return;
+            }
+            if (!/[^a-zA-Z0-9\s]/.test(payload.password)) {
+                showAuthMessage('Password must contain at least one special character.', 'error', true);
+                return;
+            }
+
             try {
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.textContent = 'Creating account...';
                 }
-                showAuthMessage('Saving your account...', 'success');
+                showAuthMessage('Saving your account...', 'success', true);
 
                 console.log('Attempting registration for:', payload.username);
                 const res = await fetch('/register', {
@@ -239,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (res.ok) {
-                    showAuthMessage('Account created! You can now sign in.', 'success');
+                    showAuthMessage('Account created! You can now sign in.', 'success', true);
                     setTimeout(() => {
                         registerCard?.classList.add('hidden');
                         loginCard?.classList.remove('hidden');
@@ -248,11 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const err = await res.json();
                     console.error('Registration failed:', err);
-                    showAuthMessage(err.detail || 'Registration failed. Try a different username/email.');
+                    showAuthMessage(err.detail || 'Registration failed. Try a different username/email.', 'error', true);
                 }
             } catch (err) {
                 console.error('Connection error:', err);
-                showAuthMessage('Could not connect to server during registration.');
+                showAuthMessage('Could not connect to server during registration.', 'error', true);
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;

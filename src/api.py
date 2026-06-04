@@ -168,6 +168,18 @@ class WebsiteRequest(BaseModel):
 async def register(request: RegisterRequest):
     if not request.username or not request.password:
         raise HTTPException(status_code=400, detail="Username and password are required")
+    
+    # Password strength validation
+    password = request.password
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    if not any(char.isupper() for char in password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter")
+    if not any(char.isdigit() for char in password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
+    if not any(not char.isalnum() and not char.isspace() for char in password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one special character")
+
     hashed_password = pwd_context.hash(request.password)
     try:
         with engine.begin() as conn:

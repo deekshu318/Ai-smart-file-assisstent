@@ -619,6 +619,36 @@ html {
 }
 .input-group input:focus { border-color: #7c5cfc; background: white; box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.1); outline: none; }
 
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.password-wrapper input {
+    width: 100%;
+    padding-right: 2.75rem !important;
+}
+.password-toggle-icon {
+    position: absolute;
+    right: 1rem;
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.2s ease;
+    z-index: 2;
+    user-select: none;
+    padding: 0.25rem;
+}
+.password-toggle-icon:hover {
+    color: #7c5cfc;
+}
+.password-requirements-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+    line-height: 1.3;
+}
+
 .forgot-pass { text-align: right; font-size: 0.85rem; color: #64748b; cursor: pointer; }
 .forgot-pass:hover { color: #7c5cfc; }
 
