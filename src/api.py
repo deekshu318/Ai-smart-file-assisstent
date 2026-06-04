@@ -293,11 +293,14 @@ async def add_youtube_source(request: YoutubeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/test-ytdlp")
-async def test_ytdlp(url: str):
+async def test_ytdlp(url: str, client: str = None):
     import traceback
     try:
         from youtube_processor import get_transcript_via_ytdlp_json3
-        res = get_transcript_via_ytdlp_json3(url)
+        player_client = None
+        if client:
+            player_client = client.split(",")
+        res = get_transcript_via_ytdlp_json3(url, player_client=player_client)
         if res:
             return {"status": "success", "length": len(res), "sample": [{"start": r.start, "text": r.text} for r in res[:5]]}
         return {"status": "failed", "reason": "Returned None"}

@@ -45,85 +45,112 @@ class SubtitleSegment:
         self.text = text
         self.start = start
 
-def get_transcript_via_ytdlp_json3(url):
+def get_transcript_via_ytdlp_json3(url, player_client=None):
     """Fallback method using yt-dlp to extract the JSON3 timedtext subtitle URL and download it."""
     import requests
     
-    ydl_opts = {
-        'skip_download': True,
-        'writesubtitles': True,
-        'writeautomaticsub': True,
-        'quiet': True,
-        'no_warnings': True,
-    }
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            
-        subtitles = info.get('subtitles', {}) or {}
-        auto_captions = info.get('automatic_captions', {}) or {}
+    # Try different player clients to bypass YouTube's "Sign in to confirm you're not a bot" block
+    if player_client:
+        clients_to_try = [player_client if isinstance(player_client, list) else [player_client]]
+    else:
+        clients_to_try = [
+            ['ios'],
+            ['android'],
+            ['mweb'],
+            ['web_safari'],
+            ['default', '-web', '-tv'],
+            None
+        ]
         
-        en_subs = subtitles.get('en', []) or subtitles.get('en-US', []) or []
-        if not en_subs:
-            for lang in subtitles:
-                if lang.startswith('en'):
-                    en_subs = subtitles[lang]
-                    break
-                    
-        if not en_subs:
-            en_subs = auto_captions.get('en', []) or auto_captions.get('en-US', []) or []
+    last_error = None
+    for client in clients_to_try:
+        ydl_opts = {
+            'skip_download': True,
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        if client:
+            ydl_opts['extractor_args'] = {
+                'youtube': {
+                    'player_client': client
+                }
+            }
+            
+        print(f"Trying yt-dlp JSON3 extraction with player_client={client}...")
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                
+            subtitles = info.get('subtitles', {}) or {}
+            auto_captions = info.get('automatic_captions', {}) or {}
+            
+            en_subs = subtitles.get('en', []) or subtitles.get('en-US', []) or []
             if not en_subs:
-                for lang in auto_captions:
+                for lang in subtitles:
                     if lang.startswith('en'):
-                        en_subs = auto_captions[lang]
+                        en_subs = subtitles[lang]
                         break
                         
-        if not en_subs:
-            for lang in auto_captions:
-                en_subs = auto_captions[lang]
-                break
+            if not en_subs:
+                en_subs = auto_captions.get('en', []) or auto_captions.get('en-US', []) or []
+                if not en_subs:
+                    for lang in auto_captions:
+                        if lang.startswith('en'):
+                            en_subs = auto_captions[lang]
+                            break
+                            
+            if not en_subs:
+                for lang in auto_captions:
+                    en_subs = auto_captions[lang]
+                    break
+                    
+            if not en_subs:
+                raise RuntimeError("No English or fallback subtitles found in yt-dlp metadata.")
                 
-        if not en_subs:
-            raise RuntimeError("No English or fallback subtitles found in yt-dlp metadata.")
-            
-        json3_url = next((s['url'] for s in en_subs if s.get('ext') == 'json3'), None)
-        if not json3_url:
-            raise RuntimeError(f"No json3 format URL found in subtitles metadata. Available: {[s.get('ext') for s in en_subs]}")
-            
-        response = requests.get(json3_url, timeout=10)
-        if response.status_code != 200:
-            raise RuntimeError(f"Failed to fetch json3 subtitles from URL, status code: {response.status_code}")
-            
-        data = response.json()
-        events = data.get('events', [])
-        
-        transcript = []
-        for event in events:
-            segs = event.get('segs', [])
-            if not segs:
-                continue
+            json3_url = next((s['url'] for s in en_subs if s.get('ext') == 'json3'), None)
+            if not json3_url:
+                raise RuntimeError(f"No json3 format URL found in subtitles metadata. Available: {[s.get('ext') for s in en_subs]}")
                 
-            text = "".join(s.get('utf8', '') for s in segs).strip()
-            text = re.sub(r'\s+', ' ', text).strip()
-            
-            if not text or text == '\n':
-                continue
+            response = requests.get(json3_url, timeout=10)
+            if response.status_code != 200:
+                raise RuntimeError(f"Failed to fetch json3 subtitles from URL, status code: {response.status_code}")
                 
-            start_ms = event.get('tStartMs', 0)
-            start_sec = start_ms / 1000.0
+            data = response.json()
+            events = data.get('events', [])
             
-            if not transcript or transcript[-1]["text"] != text:
-                transcript.append({
-                    "text": text,
-                    "start": start_sec
-                })
+            transcript = []
+            for event in events:
+                segs = event.get('segs', [])
+                if not segs:
+                    continue
+                    
+                text = "".join(s.get('utf8', '') for s in segs).strip()
+                text = re.sub(r'\s+', ' ', text).strip()
                 
-        return [SubtitleSegment(item["text"], item["start"]) for item in transcript]
-        
-    except Exception as e:
-        print(f"Fallback yt-dlp json3 extraction failed: {e}")
-        raise e
+                if not text or text == '\n':
+                    continue
+                    
+                start_ms = event.get('tStartMs', 0)
+                start_sec = start_ms / 1000.0
+                
+                if not transcript or transcript[-1]["text"] != text:
+                    transcript.append({
+                        "text": text,
+                        "start": start_sec
+                    })
+                    
+            print(f"Successfully extracted transcript using player_client={client}!")
+            return [SubtitleSegment(item["text"], item["start"]) for item in transcript]
+            
+        except Exception as e:
+            print(f"Fallback yt-dlp JSON3 extraction failed for player_client={client}: {e}")
+            last_error = e
+            
+    if last_error:
+        raise last_error
+    raise RuntimeError("Failed to process YouTube link with all client configurations.")
 
 def process_youtube_link(url, document_id=None):
     """Fetch transcript, embed, and store in ChromaDB."""
