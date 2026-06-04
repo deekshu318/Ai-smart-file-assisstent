@@ -295,6 +295,7 @@ async def add_youtube_source(request: YoutubeRequest):
 @app.get("/test-ytdlp")
 async def test_ytdlp(url: str, client: str = None):
     import traceback
+    from youtube_processor import YoutubeTranscriptError
     try:
         from youtube_processor import get_transcript_via_ytdlp_json3
         player_client = None
@@ -304,6 +305,9 @@ async def test_ytdlp(url: str, client: str = None):
         if res:
             return {"status": "success", "length": len(res), "sample": [{"start": r.start, "text": r.text} for r in res[:5]]}
         return {"status": "failed", "reason": "Returned None"}
+    except YoutubeTranscriptError as yte:
+        tb = traceback.format_exc()
+        return {"status": "error", "message": str(yte), "logs": yte.logs, "traceback": tb}
     except Exception as e:
         tb = traceback.format_exc()
         return {"status": "error", "message": str(e), "traceback": tb}

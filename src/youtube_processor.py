@@ -40,6 +40,11 @@ def get_video_metadata(url):
                 'author': 'Unknown',
             }
 
+class YoutubeTranscriptError(Exception):
+    def __init__(self, message, logs):
+        super().__init__(message)
+        self.logs = logs
+
 class SubtitleSegment:
     def __init__(self, text, start):
         self.text = text
@@ -62,7 +67,7 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
             None
         ]
         
-    last_error = None
+    logs = []
     for client in clients_to_try:
         ydl_opts = {
             'skip_download': True,
@@ -78,7 +83,9 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
                 }
             }
             
-        print(f"Trying yt-dlp JSON3 extraction with player_client={client}...")
+        msg = f"Trying yt-dlp JSON3 extraction with player_client={client}..."
+        print(msg)
+        logs.append(msg)
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -141,16 +148,17 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
                         "start": start_sec
                     })
                     
-            print(f"Successfully extracted transcript using player_client={client}!")
+            msg_ok = f"Successfully extracted transcript using player_client={client}!"
+            print(msg_ok)
+            logs.append(msg_ok)
             return [SubtitleSegment(item["text"], item["start"]) for item in transcript]
             
         except Exception as e:
-            print(f"Fallback yt-dlp JSON3 extraction failed for player_client={client}: {e}")
-            last_error = e
+            msg_err = f"Fallback yt-dlp JSON3 extraction failed for player_client={client}: {e}"
+            print(msg_err)
+            logs.append(msg_err)
             
-    if last_error:
-        raise last_error
-    raise RuntimeError("Failed to process YouTube link with all client configurations.")
+    raise YoutubeTranscriptError("Failed to process YouTube link with all client configurations.", logs)
 
 def process_youtube_link(url, document_id=None):
     """Fetch transcript, embed, and store in ChromaDB."""
