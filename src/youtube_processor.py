@@ -94,6 +94,7 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
             auto_captions = info.get('automatic_captions', {}) or {}
             
             en_subs = subtitles.get('en', []) or subtitles.get('en-US', []) or []
+            is_english = True
             if not en_subs:
                 for lang in subtitles:
                     if lang.startswith('en'):
@@ -109,8 +110,15 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
                             break
                             
             if not en_subs:
+                is_english = False
                 for lang in auto_captions:
                     en_subs = auto_captions[lang]
+                    break
+                    
+            if not en_subs:
+                is_english = False
+                for lang in subtitles:
+                    en_subs = subtitles[lang]
                     break
                     
             if not en_subs:
@@ -120,7 +128,18 @@ def get_transcript_via_ytdlp_json3(url, player_client=None):
             if not json3_url:
                 raise RuntimeError(f"No json3 format URL found in subtitles metadata. Available: {[s.get('ext') for s in en_subs]}")
                 
-            response = requests.get(json3_url, timeout=10)
+            if not is_english:
+                if '&tlang=en' not in json3_url and '?tlang=en' not in json3_url:
+                    if '?' in json3_url:
+                        json3_url += '&tlang=en'
+                    else:
+                        json3_url += '?tlang=en'
+                        
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+            response = requests.get(json3_url, headers=headers, timeout=10)
             if response.status_code != 200:
                 raise RuntimeError(f"Failed to fetch json3 subtitles from URL, status code: {response.status_code}")
                 
@@ -181,7 +200,32 @@ def process_youtube_link(url, document_id=None):
         transcript_list = None
         try:
             ytt_api = YouTubeTranscriptApi()
-            transcript_list = ytt_api.fetch(video_id)
+            try:
+                # Try fetching English first
+                transcript_list = ytt_api.fetch(video_id, languages=['en', 'en-US'])
+            except Exception as e_en:
+                print(f"YouTubeTranscriptApi failed to find English transcript: {e_en}. Checking other languages...")
+                # List available transcripts
+                transcripts = ytt_api.list(video_id)
+                # Find the first available transcript
+                first_transcript = None
+                for t in transcripts:
+                    first_transcript = t
+                    break
+                if first_transcript:
+                    print(f"Found transcript in language: {first_transcript.language_code}")
+                    # Try to translate to English if supported by YouTube
+                    if first_transcript.is_translatable:
+                        try:
+                            transcript_list = first_transcript.translate('en').fetch()
+                            print("Successfully translated transcript to English!")
+                        except Exception as e_trans:
+                            print(f"Could not translate transcript to English: {e_trans}. Fetching original language...")
+                            transcript_list = first_transcript.fetch()
+                    else:
+                        transcript_list = first_transcript.fetch()
+                else:
+                    raise e_en
         except Exception as e:
             print(f"YouTubeTranscriptApi failed: {e}. Trying fallback via yt-dlp json3...")
             
@@ -199,8 +243,19 @@ def process_youtube_link(url, document_id=None):
         current_start_time = 0
         
         for segment in transcript_list:
-            text = segment.text
-            start = segment.start
+            if hasattr(segment, 'text'):
+                text = segment.text
+                start = segment.start
+            elif isinstance(segment, dict):
+                text = segment.get('text', '')
+                start = segment.get('start', 0.0)
+            else:
+                try:
+                    text = segment['text']
+                    start = segment['start']
+                except Exception:
+                    text = getattr(segment, 'text', '')
+                    start = getattr(segment, 'start', 0.0)
             
             if len(current_chunk_text) + len(text) > 1000:
                 chunks.append({
