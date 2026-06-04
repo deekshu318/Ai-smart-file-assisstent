@@ -659,10 +659,22 @@ async def ask_question(request: QuestionRequest):
                 )
             user_content = f"Context:\n{context}\n\nQuestion: {question}"
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_content}
-    ]
+    # Fetch conversation history
+    history = []
+    if conv_id:
+        with engine.connect() as conn:
+            result_proxy = conn.execute(
+                text("SELECT role, content FROM messages WHERE conversation_id = :cid ORDER BY created_at ASC"),
+                {"cid": conv_id}
+            )
+            rows = result_proxy.fetchall()
+            # The current question has already been saved, so it's the last row. Exclude it from history.
+            for r in rows[:-1]:
+                history.append({"role": r[0], "content": r[1]})
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": user_content})
 
     retries = 3
     for attempt in range(retries):
