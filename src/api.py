@@ -289,8 +289,16 @@ async def add_youtube_source(request: YoutubeRequest):
             "filename": result["title"]
         }
     except Exception as e:
-        print(f"YouTube processing error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        err_str = str(e)
+        print(f"YouTube processing error: {err_str}")
+        if any(term in err_str.lower() for term in ["bot", "sign in to confirm", "youtubetranscripterror", "downloaderror", "ssl"]):
+            friendly_err = (
+                "YouTube blocked this request because this app is hosted on a cloud server (Hugging Face Spaces). "
+                "YouTube's firewall blocks automated connections from cloud/datacenter IP ranges.\n\n"
+                "To analyze this video, please download the video/audio file and upload it directly (.mp3, .mp4, and .wav are fully supported)."
+            )
+            raise HTTPException(status_code=500, detail=friendly_err)
+        raise HTTPException(status_code=500, detail=err_str)
 
 @app.get("/test-ytdlp")
 async def test_ytdlp(url: str, client: str = None):
