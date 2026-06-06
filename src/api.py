@@ -22,14 +22,34 @@ pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 # Database Initialization
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
+    import ssl
+    from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+    
     # Support postgresql connection string format with pg8000 driver
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+pg8000://", 1)
     elif DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+pg8000://", 1)
         
+    connect_args = {}
+    # pg8000 does not support 'sslmode' query parameter. It expects 'ssl_context' in connect_args.
+    # We parse the URL, extract/remove 'sslmode', and configure the ssl_context if needed.
+    if "sslmode" in DATABASE_URL:
+        parsed = urlparse(DATABASE_URL)
+        query = parse_qs(parsed.query)
+        if "sslmode" in query:
+            sslmode_val = query.pop("sslmode")[0]
+            if sslmode_val in ("require", "verify-ca", "verify-full", "prefer"):
+                connect_args["ssl_context"] = ssl.create_default_context()
+        new_query = urlencode(query, doseq=True)
+        DATABASE_URL = urlunparse(parsed._replace(query=new_query))
+    elif "neon.tech" in DATABASE_URL or "supabase.co" in DATABASE_URL:
+        # Default to enabling SSL for known cloud database providers
+        connect_args["ssl_context"] = ssl.create_default_context()
+        
     engine = create_engine(
         DATABASE_URL,
+        connect_args=connect_args,
         pool_size=10, 
         max_overflow=20
     )
