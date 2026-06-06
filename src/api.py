@@ -379,11 +379,11 @@ async def add_youtube_source(request: YoutubeRequest):
     except Exception as e:
         err_str = str(e)
         print(f"YouTube processing error: {err_str}")
-        if any(term in err_str.lower() for term in ["bot", "sign in to confirm", "youtubetranscripterror", "downloaderror", "ssl"]):
+        if type(e).__name__ == "YoutubeTranscriptError" or any(term in err_str.lower() for term in ["bot", "sign in to confirm", "youtubetranscripterror", "downloaderror", "ssl", "failed to process youtube"]):
             friendly_err = (
                 "YouTube blocked this request because this app is hosted on a cloud server (Hugging Face Spaces). "
                 "YouTube's firewall blocks automated connections from cloud/datacenter IP ranges.\n\n"
-                "To analyze this video, please download the video/audio file and upload it directly (.mp3, .mp4, and .wav are fully supported)."
+                "To analyze this video, please download or copy its transcript (e.g., using a free online transcript downloader), save it as a text (.txt) or PDF file, and upload it directly."
             )
             raise HTTPException(status_code=500, detail=friendly_err)
         raise HTTPException(status_code=500, detail=err_str)
