@@ -5004,3 +5004,47 @@ html {
         grid-template-columns: 1fr;
     }
 }
+
+/* Sidebar History Delete Button */
+.history-item {
+    position: relative !important;
+}
+
+.history-item-header span {
+    padding-right: 24px !important;
+}
+
+.history-doc-badge {
+    margin-right: 24px !important;
+}
+
+.history-delete-btn {
+    position: absolute !important;
+    top: 50% !important;
+    right: 10px !important;
+    transform: translateY(-50%) !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-muted) !important;
+    cursor: pointer !important;
+    font-size: 0.85rem !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    opacity: 0 !important;
+    transition: all 0.2s ease !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.history-item:hover .history-delete-btn {
+    opacity: 1 !important;
+}
+
+.history-delete-btn:hover {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.15) !important;
+}

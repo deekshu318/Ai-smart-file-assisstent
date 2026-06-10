@@ -1038,18 +1038,66 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeClass = `history-doc-badge type-${docType}`;
             
             return `
-                <div class="history-item ${currentConversationId === item.id ? 'active' : ''}" data-id="${item.id}">
+                <div class="history-item ${currentConversationId === item.id ? 'active' : ''}" data-id="${item.id}" data-doc-id="${item.document_id || ''}" data-doc-name="${escapeHTML(docName || '')}">
                     <div class="history-item-header">
                         <i class="${iconClass}"></i>
                         <span>${escapeHTML(item.title || 'Untitled')}</span>
                     </div>
                     <span class="${badgeClass}">${badgeText}${docName ? ': ' + escapeHTML(docName) : ''}</span>
+                    <button class="history-delete-btn" title="Delete file or website">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
             `;
         }).join('');
 
         hList.querySelectorAll('.history-item').forEach(item => {
-            item.onclick = () => loadConversation(item.dataset.id);
+            item.onclick = (e) => {
+                if (e.target.closest('.history-delete-btn')) {
+                    e.stopPropagation();
+                    return;
+                }
+                loadConversation(item.dataset.id);
+            };
+
+            const delBtn = item.querySelector('.history-delete-btn');
+            if (delBtn) {
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const id = item.dataset.id;
+                    const docId = item.dataset.docId;
+                    const docName = item.dataset.docName;
+                    
+                    let confirmMsg = 'Are you sure you want to delete this conversation?';
+                    if (docId) {
+                        confirmMsg = `Are you sure you want to delete this conversation and permanently remove "${docName}" from the library?`;
+                    }
+                    
+                    if (!confirm(confirmMsg)) return;
+
+                    try {
+                        const convRes = await fetch(`/conversations/${id}`, { method: 'DELETE' });
+                        if (!convRes.ok) throw new Error('Failed to delete conversation');
+
+                        if (docId) {
+                            await fetch(`/documents/${docId}`, { method: 'DELETE' });
+                        }
+
+                        searchHistory = searchHistory.filter(h => h.id !== id);
+                        if (currentConversationId === id) {
+                            resetSession();
+                        } else {
+                            renderHistory();
+                        }
+                        
+                        await loadLibrary();
+                        updateFileCounters();
+                    } catch (err) {
+                        console.error('Error deleting item:', err);
+                        alert('Failed to delete the item.');
+                    }
+                };
+            }
         });
     }
 
