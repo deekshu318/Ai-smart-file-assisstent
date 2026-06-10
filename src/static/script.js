@@ -55,6 +55,52 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilter = 'all';
     let currentHistoryFilter = 'all';
 
+    function showCustomConfirm(title, message) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'custom-confirm-overlay';
+
+            const modal = document.createElement('div');
+            modal.className = 'custom-confirm-modal animate-in';
+
+            modal.innerHTML = `
+                <div class="custom-confirm-header">
+                    <i class="fas fa-exclamation-triangle warning-icon"></i>
+                    <h3>${escapeHTML(title)}</h3>
+                </div>
+                <div class="custom-confirm-body">
+                    <p>${escapeHTML(message)}</p>
+                </div>
+                <div class="custom-confirm-footer">
+                    <button class="btn-cancel" id="custom-confirm-cancel">Cancel</button>
+                    <button class="btn-confirm" id="custom-confirm-ok">Delete</button>
+                </div>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            document.body.style.overflow = 'hidden';
+
+            const cleanup = (value) => {
+                modal.classList.remove('animate-in');
+                modal.classList.add('animate-out');
+                overlay.classList.add('fade-out');
+                setTimeout(() => {
+                    overlay.remove();
+                    document.body.style.overflow = '';
+                    resolve(value);
+                }, 200);
+            };
+
+            overlay.querySelector('#custom-confirm-cancel').onclick = () => cleanup(false);
+            overlay.querySelector('#custom-confirm-ok').onclick = () => cleanup(true);
+            overlay.onclick = (e) => {
+                if (e.target === overlay) cleanup(false);
+            };
+        });
+    }
+
     const VIEW_TITLES = {
         dashboard: 'Dashboard',
         chat: 'Chat',
@@ -858,9 +904,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const doc = libraryDocuments.find(d => d.id === id);
         if (!doc) return;
 
-        if (!confirm(`Are you absolutely sure you want to permanently delete "${doc.name}"? This will erase all its semantic chunks from the vector database.`)) {
-            return;
-        }
+        const confirmed = await showCustomConfirm(
+            'Delete Resource',
+            `Are you absolutely sure you want to permanently delete "${doc.name}"? This will erase all its semantic chunks from the vector database.`
+        );
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/documents/${id}`, { method: 'DELETE' });
@@ -1068,12 +1116,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const docId = item.dataset.docId;
                     const docName = item.dataset.docName;
                     
+                    let title = 'Delete Conversation';
                     let confirmMsg = 'Are you sure you want to delete this conversation?';
                     if (docId) {
+                        title = 'Delete Resource';
                         confirmMsg = `Are you sure you want to delete this conversation and permanently remove "${docName}" from the library?`;
                     }
                     
-                    if (!confirm(confirmMsg)) return;
+                    const confirmed = await showCustomConfirm(title, confirmMsg);
+                    if (!confirmed) return;
 
                     try {
                         const convRes = await fetch(`/conversations/${id}`, { method: 'DELETE' });
@@ -1710,7 +1761,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearHistoryBtn = document.getElementById('clear-all-history');
     if (clearHistoryBtn) {
         clearHistoryBtn.onclick = async () => {
-            if (!confirm('Clear all conversation history? This cannot be undone.')) return;
+            const confirmed = await showCustomConfirm('Clear History', 'Are you sure you want to clear all conversation history? This cannot be undone.');
+            if (!confirmed) return;
             if (!searchHistory.length) return;
 
             try {
