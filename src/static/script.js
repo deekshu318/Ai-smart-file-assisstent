@@ -972,7 +972,20 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredHistory = filteredHistory.filter(item => {
                 if (!item.document_id) return false;
                 const doc = libraryDocuments.find(d => d.id === item.document_id);
-                return doc && doc.type === currentHistoryFilter;
+                if (doc) {
+                    return doc.type === currentHistoryFilter;
+                }
+                
+                // Fallback filtering if the document is not currently in the library list
+                const docId = item.document_id;
+                if (currentHistoryFilter === 'document') {
+                    return docId.startsWith('doc_') || docId === 'default_doc';
+                } else if (currentHistoryFilter === 'youtube') {
+                    return docId.startsWith('yt_');
+                } else if (currentHistoryFilter === 'website') {
+                    return docId.startsWith('web_');
+                }
+                return false;
             });
         }
 
@@ -994,6 +1007,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (docType === 'document') iconClass = 'fas fa-file-alt';
                     else if (docType === 'youtube') iconClass = 'fab fa-youtube';
                     else if (docType === 'website') iconClass = 'fas fa-globe';
+                } else {
+                    // Fallback: Infer type and name from the document_id string format
+                    const docId = item.document_id;
+                    if (docId.startsWith('doc_') || docId === 'default_doc') {
+                        docType = 'document';
+                        iconClass = 'fas fa-file-alt';
+                    } else if (docId.startsWith('yt_')) {
+                        docType = 'youtube';
+                        iconClass = 'fab fa-youtube';
+                    } else if (docId.startsWith('web_')) {
+                        docType = 'website';
+                        iconClass = 'fas fa-globe';
+                    }
+                    
+                    if (docId === 'default_doc') {
+                        docName = 'Indian Stock Market.pdf';
+                    } else {
+                        const parts = docId.split('_');
+                        if (parts.length >= 3) {
+                            docName = parts.slice(2).join(' ');
+                        } else {
+                            docName = docId;
+                        }
+                    }
                 }
             }
 
