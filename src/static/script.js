@@ -1676,9 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('file-drop-zone');
     const fileInput = document.getElementById('file-input');
     const btnTriggerFile = document.getElementById('btn-trigger-file');
-    const btnAddYoutube = document.getElementById('btn-add-youtube');
     const btnAddWebsite = document.getElementById('btn-add-website');
-    const ytInput = document.getElementById('youtube-link');
     const webInput = document.getElementById('website-link');
 
     if (dropZone && fileInput) {
@@ -1760,48 +1758,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dropZone.style.pointerEvents = 'auto';
             fileInput.value = ''; // Reset input
         }
-    }
-
-    if (btnAddYoutube && ytInput) {
-        btnAddYoutube.onclick = () => {
-            const val = ytInput.value.trim();
-            if (!val) {
-                alert('Please enter a YouTube link.');
-                return;
-            }
-
-            // Backend processing implementation
-            const originalText = btnAddYoutube.innerHTML;
-            btnAddYoutube.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btnAddYoutube.disabled = true;
-
-            fetch('/youtube', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: val })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Update file library in memory and load the resource workspace
-                    loadLibrary().then(() => {
-                        queryResource(data.document_id, data.title, true);
-                        updateFileCounters();
-                    });
-                    ytInput.value = '';
-                } else {
-                    alert('YouTube Error: ' + (data.detail || 'Failed to process video'));
-                }
-            })
-            .catch(err => {
-                console.error('YouTube Error:', err);
-                alert('Could not connect to the server.');
-            })
-            .finally(() => {
-                btnAddYoutube.innerHTML = originalText;
-                btnAddYoutube.disabled = false;
-            });
-        };
     }
 
     if (btnAddWebsite && webInput) {
