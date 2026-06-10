@@ -1661,25 +1661,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- Upload View Logic ---
-    const uploadTabs = document.querySelectorAll('.upload-tab');
-    if (uploadTabs.length > 0) {
-        uploadTabs.forEach(tab => {
-            tab.onclick = () => {
-                const targetId = tab.dataset.target;
-                
-                // Update tabs
-                uploadTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Update content
-                const uploadContents = document.querySelectorAll('.upload-main-card .tab-content');
-                uploadContents.forEach(c => c.classList.remove('active'));
-                document.getElementById(targetId)?.classList.add('active');
-            };
-        });
-    }
-
     const togglePills = document.querySelectorAll('.toggle-pill');
     if (togglePills.length > 0) {
         togglePills.forEach(pill => {
@@ -1689,81 +1670,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 pill.classList.add('active');
             };
         });
-    }
-
-    // --- Voice Recording Logic ---
-    const btnRecord = document.getElementById('btn-record');
-    const btnStopRecord = document.getElementById('btn-stop-record');
-    const voiceStatus = document.getElementById('voice-status');
-    const voiceTimer = document.getElementById('voice-timer');
-    
-    let mediaRecorder;
-    let audioChunks = [];
-    let recordTimerInterval;
-    let secondsRecorded = 0;
-
-    function formatTime(seconds) {
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    }
-
-    if (btnRecord && btnStopRecord) {
-        btnRecord.onclick = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = e => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    // Here you would upload the audioBlob to the backend
-                    voiceStatus.textContent = 'Recording saved!';
-                    console.log('Voice note recorded, size:', audioBlob.size);
-                    
-                    // Reset UI after 3 seconds
-                    setTimeout(() => {
-                        voiceStatus.textContent = 'Ready to record';
-                        voiceTimer.textContent = '00:00';
-                    }, 3000);
-                };
-
-                mediaRecorder.start();
-                
-                btnRecord.classList.add('hidden');
-                btnStopRecord.classList.remove('hidden');
-                voiceStatus.textContent = 'Recording...';
-                voiceStatus.style.color = 'var(--red)';
-                
-                secondsRecorded = 0;
-                voiceTimer.textContent = '00:00';
-                recordTimerInterval = setInterval(() => {
-                    secondsRecorded++;
-                    voiceTimer.textContent = formatTime(secondsRecorded);
-                }, 1000);
-                
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                alert('Could not access microphone. Please check permissions.');
-            }
-        };
-
-        btnStopRecord.onclick = () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-            clearInterval(recordTimerInterval);
-            
-            btnStopRecord.classList.add('hidden');
-            btnRecord.classList.remove('hidden');
-            voiceStatus.style.color = 'var(--text-secondary)';
-            voiceStatus.textContent = 'Saving...';
-        };
     }
 
     // --- Manual Upload & Button Logic ---

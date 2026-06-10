@@ -4,37 +4,14 @@
     </div>
 
     <div class="upload-container">
-        <!-- Main Upload/Voice Card -->
+        <!-- Main Upload Card -->
         <div class="upload-main-card">
-            <div class="upload-tabs">
-                <button class="upload-tab active" data-target="tab-upload">
-                    <i class="fas fa-upload"></i> Upload File
-                </button>
-                <button class="upload-tab" data-target="tab-voice">
-                    <i class="fas fa-microphone"></i> Voice Note
-                </button>
-            </div>
-
             <!-- Upload File Content -->
             <div class="tab-content active" id="tab-upload">
                 <div class="drop-zone" id="file-drop-zone">
                     <i class="fas fa-download drop-icon"></i>
                     <p>Drop here or click to browse</p>
                     <input type="file" id="file-input" hidden multiple>
-                </div>
-            </div>
-
-            <!-- Voice Note Content -->
-            <div class="tab-content" id="tab-voice">
-                <div class="voice-recorder">
-                    <div class="voice-status" id="voice-status">Ready to record</div>
-                    <div class="voice-timer" id="voice-timer">00:00</div>
-                    <button class="btn-record" id="btn-record">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="btn-stop-record hidden" id="btn-stop-record">
-                        <i class="fas fa-stop"></i>
-                    </button>
                 </div>
             </div>
         </div>
