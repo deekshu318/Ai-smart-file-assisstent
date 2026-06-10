@@ -122,7 +122,6 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             '''))
-            
         # Messages table
         if dialect == "postgresql":
             conn.execute(text('''
@@ -149,7 +148,80 @@ def init_db():
                 )
             '''))
 
+        # Document chunks table
+        if dialect == "postgresql":
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS document_chunks (
+                    id VARCHAR(255) PRIMARY KEY,
+                    document_id VARCHAR(255) NOT NULL,
+                    text_content TEXT NOT NULL,
+                    page_number INTEGER NOT NULL,
+                    chunk_id INTEGER NOT NULL,
+                    embedding TEXT NOT NULL
+                )
+            '''))
+        else: # SQLite
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS document_chunks (
+                    id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    text_content TEXT NOT NULL,
+                    page_number INTEGER NOT NULL,
+                    chunk_id INTEGER NOT NULL,
+                    embedding TEXT NOT NULL
+                )
+            '''))
+
 init_db()
+
+# Auto-restore ChromaDB from Postgres if empty
+def restore_chromadb_from_sql():
+    from semantic_search import collection
+    import json
+    
+    try:
+        count = collection.count()
+        if count > 0:
+            print(f"ChromaDB contains {count} items. No restore needed.")
+            return
+            
+        print("ChromaDB is empty. Checking SQL database for backup chunks...")
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT id, document_id, text_content, page_number, chunk_id, embedding FROM document_chunks")).fetchall()
+        
+        if not result:
+            print("No backup chunks found in SQL database.")
+            return
+            
+        print(f"Found {len(result)} backup chunks. Restoring to ChromaDB...")
+        ids = []
+        documents = []
+        embeddings = []
+        metadatas = []
+        
+        for row in result:
+            ids.append(row[0])
+            documents.append(row[2])
+            metadatas.append({
+                "page": row[3],
+                "chunk_id": row[4],
+                "document_id": row[1]
+            })
+            # Parse embedding float list from JSON
+            embeddings.append(json.loads(row[5]))
+            
+        # Add to collection
+        collection.add(
+            ids=ids,
+            documents=documents,
+            embeddings=embeddings,
+            metadatas=metadatas
+        )
+        print(f"Successfully restored {len(ids)} chunks to ChromaDB!")
+    except Exception as e:
+        print(f"Error during ChromaDB restoration: {e}")
+
+restore_chromadb_from_sql()
 
 from pathlib import Path
 current_dir = Path(__file__).parent
@@ -535,6 +607,7 @@ async def delete_document(document_id: str):
     try:
         collection.delete(where={"document_id": document_id})
         with engine.begin() as conn:
+            conn.execute(text("DELETE FROM document_chunks WHERE document_id = :did"), {"did": document_id})
             conn.execute(text("UPDATE conversations SET document_id = NULL WHERE document_id = :did"), {"did": document_id})
         return {"status": "success", "message": f"Document {document_id} deleted successfully"}
     except Exception as e:

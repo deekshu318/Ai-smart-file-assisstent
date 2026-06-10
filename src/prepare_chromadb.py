@@ -40,6 +40,43 @@ def store_embeddings(chunk_objects, vectors, document_id):
 
     print(f"Stored {len(ids)} embeddings in ChromaDB for doc {document_id}")
 
+    # Store in SQL database as backup
+    try:
+        from api import engine
+    except ImportError:
+        from sqlalchemy import create_engine
+        engine = create_engine(f"sqlite:///{os.path.join(BASE_DIR, 'src', 'users.db')}")
+
+    from sqlalchemy import text
+    import json
+    
+    try:
+        with engine.begin() as conn:
+            # Delete old chunks to avoid duplication
+            conn.execute(text("DELETE FROM document_chunks WHERE document_id = :did"), {"did": document_id})
+            
+            # Batch insert chunks
+            for i, chunk in enumerate(chunk_objects):
+                cid = f"chunk_{document_id}_{i}"
+                embedding_json = json.dumps(vectors[i].tolist())
+                conn.execute(
+                    text("""
+                        INSERT INTO document_chunks (id, document_id, text_content, page_number, chunk_id, embedding)
+                        VALUES (:id, :did, :txt, :page, :cid, :emb)
+                    """),
+                    {
+                        "id": cid,
+                        "did": document_id,
+                        "txt": chunk["text"],
+                        "page": chunk["pages"],
+                        "cid": chunk["chunk_id"],
+                        "emb": embedding_json
+                    }
+                )
+        print(f"Stored {len(chunk_objects)} backup chunks in SQL database for doc {document_id}")
+    except Exception as sqle:
+        print(f"SQL backup failed for document {document_id}: {sqle}")
+
 def process_and_store_document(file_path, document_id):
     """Extract text from a file, generate embeddings, and store in ChromaDB."""
     print(f"Extracting text from {file_path}...")
