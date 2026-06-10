@@ -1837,7 +1837,7 @@ html {
 /* --- History Segmented Filters --- */
 .history-filters {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     padding: 0.25rem 1.5rem 0.75rem;
     background: transparent;
