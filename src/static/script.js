@@ -574,28 +574,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let previewingDocId = null;
 
     async function loadLibrary() {
-        if (!libraryGrid) return;
-        
-        libraryGrid.innerHTML = `
-            <div class="library-loading-container">
-                <i class="fas fa-circle-notch fa-spin fa-3x"></i>
-                <p>Loading library assets...</p>
-            </div>
-        `;
+        if (libraryGrid) {
+            libraryGrid.innerHTML = `
+                <div class="library-loading-container">
+                    <i class="fas fa-circle-notch fa-spin fa-3x"></i>
+                    <p>Loading library assets...</p>
+                </div>
+            `;
+        }
         if (libraryEmptyState) libraryEmptyState.classList.add('hidden');
 
         try {
             const res = await fetch('/documents');
             if (res.ok) {
                 libraryDocuments = await res.json();
-                renderLibrary();
+                if (libraryGrid) renderLibrary();
                 updateLibraryStats();
+                renderHistory(); // Re-render history now that document categories are loaded
             } else {
-                libraryGrid.innerHTML = '<div class="library-error-msg"><i class="fas fa-exclamation-triangle"></i> Failed to fetch library documents.</div>';
+                if (libraryGrid) libraryGrid.innerHTML = '<div class="library-error-msg"><i class="fas fa-exclamation-triangle"></i> Failed to fetch library documents.</div>';
             }
         } catch (err) {
             console.error('Error fetching library:', err);
-            libraryGrid.innerHTML = '<div class="library-error-msg"><i class="fas fa-exclamation-triangle"></i> Connection error. Please try again.</div>';
+            if (libraryGrid) libraryGrid.innerHTML = '<div class="library-error-msg"><i class="fas fa-exclamation-triangle"></i> Connection error. Please try again.</div>';
         }
     }
 
