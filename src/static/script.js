@@ -1358,10 +1358,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error("Speech recognition error:", event.error);
                     isRecordingState = false;
                     isListening = false;
+                    
+                    const isIframe = window.self !== window.top;
+                    const directUrl = window.location.origin;
+
                     if (event.error === 'not-allowed') {
-                        alert("Microphone permission denied. Please allow microphone access in your browser settings.");
+                        if (isIframe) {
+                            alert(`Microphone permission denied.\n\nBrowsers restrict microphone access inside iframes. Please open the app directly in a new tab to use the microphone:\n\n${directUrl}`);
+                        } else {
+                            alert("Microphone permission denied. Please allow microphone access in your browser settings.");
+                        }
                     } else if (event.error === 'network') {
-                        alert("Speech recognition network error. Please check your internet connection.");
+                        if (isIframe) {
+                            alert(`Speech recognition failed with a network error.\n\nChrome blocks Speech Recognition inside embedded spaces. Please open the app directly in a new tab to use the microphone:\n\n${directUrl}`);
+                        } else {
+                            alert("Speech recognition network error. Please check your internet connection.");
+                        }
+                    } else {
+                        if (isIframe) {
+                            alert(`Speech recognition error (${event.error}).\n\nTry opening the application directly in a new tab to bypass iframe limits:\n\n${directUrl}`);
+                        }
                     }
                 };
 
