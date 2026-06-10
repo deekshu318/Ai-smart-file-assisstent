@@ -1215,17 +1215,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const voiceBtn = document.querySelector('.voice-btn');
         let recognition = null;
         let isListening = false;
+        let isRecordingState = false;
+        let initialText = '';
 
         if (voiceBtn) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognition) {
                 recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
+                recognition.continuous = true;
+                recognition.interimResults = true;
                 recognition.lang = 'en-US';
 
                 recognition.onstart = () => {
                     isListening = true;
+                    isRecordingState = true;
+                    initialText = chatInput.value;
                     voiceBtn.classList.add('recording');
                     const micIcon = voiceBtn.querySelector('i');
                     if (micIcon) {
@@ -1235,12 +1239,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 recognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    if (transcript) {
-                        if (chatInput.value) {
-                            chatInput.value += ' ' + transcript;
+                    let sessionTranscript = '';
+                    for (let i = 0; i < event.results.length; ++i) {
+                        sessionTranscript += event.results[i][0].transcript;
+                    }
+                    
+                    if (sessionTranscript) {
+                        if (initialText) {
+                            chatInput.value = initialText.trim() + ' ' + sessionTranscript.trim();
                         } else {
-                            chatInput.value = transcript;
+                            chatInput.value = sessionTranscript.trim();
                         }
                         // Trigger input event to adjust textarea height
                         chatInput.dispatchEvent(new Event('input'));
@@ -1249,13 +1257,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 recognition.onerror = (event) => {
                     console.error("Speech recognition error:", event.error);
+                    isRecordingState = false;
+                    isListening = false;
                     if (event.error === 'not-allowed') {
                         alert("Microphone permission denied. Please allow microphone access in your browser settings.");
+                    } else if (event.error === 'network') {
+                        alert("Speech recognition network error. Please check your internet connection.");
                     }
                 };
 
                 recognition.onend = () => {
                     isListening = false;
+                    isRecordingState = false;
                     voiceBtn.classList.remove('recording');
                     const micIcon = voiceBtn.querySelector('i');
                     if (micIcon) {
@@ -1268,16 +1281,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         chatInput.placeholder = "Ask about your files...";
                     }
+                    chatInput.focus();
                 };
 
                 voiceBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    if (isListening) {
-                        recognition.stop();
+                    if (isRecordingState) {
+                        try {
+                            recognition.stop();
+                        } catch (err) {
+                            console.error("Failed to stop speech recognition:", err);
+                        }
                     } else {
                         try {
+                            isRecordingState = true;
                             recognition.start();
                         } catch (err) {
+                            isRecordingState = false;
                             console.error("Failed to start speech recognition:", err);
                         }
                     }
