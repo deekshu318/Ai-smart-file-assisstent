@@ -384,6 +384,26 @@ async def login(request: LoginRequest):
 async def logout():
     return {"status": "success"}
 
+@app.get("/db-test")
+async def db_test():
+    try:
+        dialect = engine.dialect.name
+        with engine.begin() as conn:
+            if dialect == "sqlite":
+                conn.execute(text("CREATE TABLE IF NOT EXISTS db_test_table (id INTEGER PRIMARY KEY, val TEXT)"))
+                conn.execute(text("INSERT INTO db_test_table (val) VALUES ('test')"))
+                res = conn.execute(text("SELECT * FROM db_test_table")).fetchall()
+                conn.execute(text("DROP TABLE db_test_table"))
+            else:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS db_test_table (id SERIAL PRIMARY KEY, val TEXT)"))
+                conn.execute(text("INSERT INTO db_test_table (val) VALUES ('test')"))
+                res = conn.execute(text("SELECT * FROM db_test_table")).fetchall()
+                conn.execute(text("DROP TABLE db_test_table"))
+        return {"status": "success", "dialect": dialect, "result": str(res)}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error_type": type(e).__name__, "error_message": str(e), "traceback": traceback.format_exc()}
+
 @app.post("/forgot-password")
 async def forgot_password(request: Request, payload: ForgotPasswordRequest):
     email = payload.email.strip().lower()
