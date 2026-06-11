@@ -355,7 +355,8 @@ async def register(request: RegisterRequest):
                            {"fn": request.full_name, "un": request.username, "em": request.email, "hp": hashed_password})
         return {"status": "success", "message": "User registered successfully"}
     except Exception as e:
-        if "UNIQUE constraint failed" in str(e):
+        err_str = str(e).lower()
+        if "unique constraint" in err_str or "duplicate key" in err_str or "unique constraint failed" in err_str:
             raise HTTPException(status_code=400, detail="Username or email already exists")
         print(f"Registration error: {e}")
         raise HTTPException(status_code=500, detail="Database error during registration")
@@ -383,26 +384,6 @@ async def login(request: LoginRequest):
 @app.post("/logout")
 async def logout():
     return {"status": "success"}
-
-@app.get("/db-test")
-async def db_test():
-    try:
-        dialect = engine.dialect.name
-        with engine.begin() as conn:
-            if dialect == "sqlite":
-                conn.execute(text("CREATE TABLE IF NOT EXISTS db_test_table (id INTEGER PRIMARY KEY, val TEXT)"))
-                conn.execute(text("INSERT INTO db_test_table (val) VALUES ('test')"))
-                res = conn.execute(text("SELECT * FROM db_test_table")).fetchall()
-                conn.execute(text("DROP TABLE db_test_table"))
-            else:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS db_test_table (id SERIAL PRIMARY KEY, val TEXT)"))
-                conn.execute(text("INSERT INTO db_test_table (val) VALUES ('test')"))
-                res = conn.execute(text("SELECT * FROM db_test_table")).fetchall()
-                conn.execute(text("DROP TABLE db_test_table"))
-        return {"status": "success", "dialect": dialect, "result": str(res)}
-    except Exception as e:
-        import traceback
-        return {"status": "error", "error_type": type(e).__name__, "error_message": str(e), "traceback": traceback.format_exc()}
 
 @app.post("/forgot-password")
 async def forgot_password(request: Request, payload: ForgotPasswordRequest):
@@ -614,7 +595,8 @@ async def update_profile(request: ProfileUpdateRequest):
             }
         raise HTTPException(status_code=404, detail="User not found")
     except Exception as e:
-        if "UNIQUE constraint failed" in str(e):
+        err_str = str(e).lower()
+        if "unique constraint" in err_str or "duplicate key" in err_str or "unique constraint failed" in err_str:
             raise HTTPException(status_code=400, detail="Username already exists")
         print(f"Profile update error: {e}")
         raise HTTPException(status_code=500, detail="Database error during profile update")
