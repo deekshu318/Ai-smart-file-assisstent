@@ -1,6 +1,11 @@
 import os
 import time
 import sqlite3
+import secrets
+from datetime import datetime, timedelta
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from sqlalchemy import create_engine, text
 from fastapi import FastAPI, HTTPException, Body, Request, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
@@ -172,6 +177,24 @@ def init_db():
                 )
             '''))
 
+        # Password Resets table
+        if dialect == "postgresql":
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS password_resets (
+                    email VARCHAR(255) PRIMARY KEY,
+                    token VARCHAR(255) UNIQUE NOT NULL,
+                    expires_at TIMESTAMP NOT NULL
+                )
+            '''))
+        else: # SQLite
+            conn.execute(text('''
+                CREATE TABLE IF NOT EXISTS password_resets (
+                    email TEXT PRIMARY KEY,
+                    token TEXT UNIQUE NOT NULL,
+                    expires_at INTEGER NOT NULL
+                )
+            '''))
+
 init_db()
 
 # Auto-restore ChromaDB from Postgres if empty
@@ -289,6 +312,9 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
 class ProfileUpdateRequest(BaseModel):
     user_id: int
     full_name: str
@@ -349,7 +375,7 @@ async def login(request: LoginRequest):
                 "full_name": result[1],
                 "name": result[2], 
                 "email": result[3], 
-                "avatar": result[5] if result[5] else result[1][0].upper()
+                "avatar": result[5] if result[5] else (result[1][0].upper() if result[1] else "U")
             }
         }
     raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -357,6 +383,187 @@ async def login(request: LoginRequest):
 @app.post("/logout")
 async def logout():
     return {"status": "success"}
+
+@app.post("/forgot-password")
+async def forgot_password(request: Request, payload: ForgotPasswordRequest):
+    email = payload.email.strip().lower()
+    
+    # Check if user exists
+    with engine.connect() as conn:
+        user = conn.execute(
+            text("SELECT id FROM users WHERE email = :em"),
+            {"em": email}
+        ).fetchone()
+        
+    if not user:
+        print(f"Password reset requested for non-existent email: {email}")
+        return {"status": "success", "message": "If this email is registered, a password reset link has been sent."}
+
+    # Generate token
+    token = secrets.token_urlsafe(32)
+    dialect = engine.dialect.name
+    
+    # Store in DB (expires in 1 hour)
+    if dialect == "postgresql":
+        expires_at = datetime.utcnow() + timedelta(hours=1)
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM password_resets WHERE email = :em"), {"em": email})
+            conn.execute(
+                text("INSERT INTO password_resets (email, token, expires_at) VALUES (:em, :t, :exp)"),
+                {"em": email, "t": token, "exp": expires_at}
+            )
+    else: # SQLite
+        expires_at = int(time.time()) + 3600 # 1 hour
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM password_resets WHERE email = :em"), {"em": email})
+            conn.execute(
+                text("INSERT INTO password_resets (email, token, expires_at) VALUES (:em, :t, :exp)"),
+                {"em": email, "t": token, "exp": expires_at}
+            )
+
+    # Construct reset link
+    base_url = str(request.base_url).rstrip("/")
+    reset_link = f"{base_url}/reset-password?token={token}"
+    
+    # Send email or fallback to console logs
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = os.getenv("SMTP_PORT")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM", smtp_user)
+    
+    email_sent = False
+    if smtp_host and smtp_port and smtp_user and smtp_pass:
+        try:
+            port = int(smtp_port)
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = "Password Reset Link - AI Smart File"
+            msg["From"] = smtp_from
+            msg["To"] = email
+            
+            html = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; color: #1a1a2e; background-color: #f8fafc;">
+                <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <h2 style="color: #7c5cfc; text-align: center; margin-bottom: 20px;">AI Smart File</h2>
+                    <p>Hello,</p>
+                    <p>We received a request to reset your password. You can reset your password by clicking the button below:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{reset_link}" style="background-color: #1a1a2e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password</a>
+                    </div>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #7c5cfc;"><a href="{reset_link}">{reset_link}</a></p>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+                    <p style="font-size: 0.8rem; color: #64748b;">This link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email.</p>
+                </div>
+            </body>
+            </html>
+            """
+            msg.attach(MIMEText(html, "html"))
+            
+            with smtplib.SMTP(smtp_host, port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, email, msg.as_string())
+            email_sent = True
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            
+    # Always print in server logs for reference/development
+    print("\n" + "="*80)
+    print(f"PASSWORD RESET REQUEST FOR: {email}")
+    print(f"RESET LINK: {reset_link}")
+    print("="*80 + "\n")
+    
+    if email_sent:
+        return {"status": "success", "message": "A password reset link has been sent to your email."}
+    else:
+        return {
+            "status": "success", 
+            "message": "A password reset link has been generated. (SMTP not configured, printed to console/logs for testing)."
+        }
+
+@app.get("/reset-password")
+async def show_reset_password_page(request: Request, token: str):
+    dialect = engine.dialect.name
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT email, expires_at FROM password_resets WHERE token = :t"),
+            {"t": token}
+        ).fetchone()
+            
+    if not row:
+        return templates.TemplateResponse(request, "reset_error.html", {"request": request, "message": "Invalid password reset token."})
+        
+    email, expires_at = row
+    
+    if dialect == "postgresql":
+        is_expired = datetime.utcnow() > expires_at
+    else:
+        is_expired = time.time() > expires_at
+        
+    if is_expired:
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM password_resets WHERE token = :t"), {"t": token})
+        return templates.TemplateResponse(request, "reset_error.html", {"request": request, "message": "This password reset token has expired."})
+        
+    return templates.TemplateResponse(request, "reset_password.html", {"request": request, "token": token, "email": email})
+
+@app.post("/reset-password")
+async def process_reset_password(
+    request: Request,
+    token: str = Form(...),
+    password: str = Form(...)
+):
+    if not token or not password:
+        return templates.TemplateResponse(request, "reset_error.html", {"request": request, "message": "Missing token or password."})
+
+    # Validate password strength
+    if len(password) < 8:
+        return templates.TemplateResponse(request, "reset_password.html", {"request": request, "token": token, "error": "Password must be at least 8 characters long."})
+    if not any(char.isupper() for char in password):
+        return templates.TemplateResponse(request, "reset_password.html", {"request": request, "token": token, "error": "Password must contain at least one uppercase letter."})
+    if not any(char.isdigit() for char in password):
+        return templates.TemplateResponse(request, "reset_password.html", {"request": request, "token": token, "error": "Password must contain at least one number."})
+    if not any(not char.isalnum() and not char.isspace() for char in password):
+        return templates.TemplateResponse(request, "reset_password.html", {"request": request, "token": token, "error": "Password must contain at least one special character."})
+
+    dialect = engine.dialect.name
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT email, expires_at FROM password_resets WHERE token = :t"),
+            {"t": token}
+        ).fetchone()
+
+    if not row:
+        return templates.TemplateResponse(request, "reset_error.html", {"request": request, "message": "Invalid token."})
+
+    email, expires_at = row
+    if dialect == "postgresql":
+        is_expired = datetime.utcnow() > expires_at
+    else:
+        is_expired = time.time() > expires_at
+
+    if is_expired:
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM password_resets WHERE token = :t"), {"t": token})
+        return templates.TemplateResponse(request, "reset_error.html", {"request": request, "message": "Token expired."})
+
+    # Token is valid! Hash the new password and update users table.
+    hashed_password = pwd_context.hash(password)
+    with engine.begin() as conn:
+        # Update user's password
+        conn.execute(
+            text("UPDATE users SET hashed_password = :hp WHERE email = :em"),
+            {"hp": hashed_password, "em": email}
+        )
+        # Delete token
+        conn.execute(
+            text("DELETE FROM password_resets WHERE token = :t"),
+            {"t": token}
+        )
+
+    return templates.TemplateResponse(request, "reset_success.html", {"request": request})
 
 @app.post("/profile/update")
 async def update_profile(request: ProfileUpdateRequest):
@@ -382,7 +589,7 @@ async def update_profile(request: ProfileUpdateRequest):
                     "full_name": result[1],
                     "name": result[2],
                     "email": result[3],
-                    "avatar": result[4] if result[4] else result[1][0].upper()
+                    "avatar": result[4] if result[4] else (result[1][0].upper() if result[1] else "U")
                 }
             }
         raise HTTPException(status_code=404, detail="User not found")

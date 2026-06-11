@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnHeroGetStarted = document.getElementById('btn-hero-get-started');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnForgotPassword = document.getElementById('btn-forgot-password');
+    const forgotCard = document.getElementById('forgot-password-card');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const goToLoginFromForgot = document.getElementById('go-to-login-from-forgot');
 
     const appMain = document.getElementById('app-container');
     const historyList = document.getElementById('history-list');
@@ -199,7 +202,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnForgotPassword) {
         btnForgotPassword.onclick = () => {
-            showAuthMessage('A password reset link has been sent to your email (Demo).', 'success');
+            document.getElementById('auth-status-message')?.classList.add('hidden');
+            document.getElementById('register-status-message')?.classList.add('hidden');
+            document.getElementById('forgot-status-message')?.classList.add('hidden');
+            loginCard?.classList.add('hidden');
+            registerCard?.classList.add('hidden');
+            forgotCard?.classList.remove('hidden');
+        };
+    }
+
+    if (goToLoginFromForgot) {
+        goToLoginFromForgot.onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('auth-status-message')?.classList.add('hidden');
+            document.getElementById('register-status-message')?.classList.add('hidden');
+            document.getElementById('forgot-status-message')?.classList.add('hidden');
+            registerCard?.classList.add('hidden');
+            forgotCard?.classList.add('hidden');
+            loginCard?.classList.remove('hidden');
         };
     }
 
@@ -215,7 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             document.getElementById('auth-status-message')?.classList.add('hidden');
             document.getElementById('register-status-message')?.classList.add('hidden');
+            document.getElementById('forgot-status-message')?.classList.add('hidden');
             loginCard?.classList.add('hidden');
+            forgotCard?.classList.add('hidden');
             registerCard?.classList.remove('hidden');
         };
     }
@@ -225,9 +247,63 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             document.getElementById('auth-status-message')?.classList.add('hidden');
             document.getElementById('register-status-message')?.classList.add('hidden');
+            document.getElementById('forgot-status-message')?.classList.add('hidden');
             registerCard?.classList.add('hidden');
+            forgotCard?.classList.add('hidden');
             loginCard?.classList.remove('hidden');
         };
+    }
+
+    if (forgotForm) {
+        forgotForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const submitBtn = forgotForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : 'Send Reset Link';
+            const email = document.getElementById('forgot-email').value;
+
+            if (!email) {
+                showForgotMessage('Please enter your email.');
+                return;
+            }
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Sending...';
+                }
+                showForgotMessage('Requesting reset link...', 'success');
+
+                const res = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showForgotMessage(data.message, 'success');
+                    forgotForm.reset();
+                } else {
+                    showForgotMessage(data.detail || 'An error occurred. Please try again.');
+                }
+            } catch (err) {
+                console.error('Connection error:', err);
+                showForgotMessage('Could not connect to server. Please try again.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                }
+            }
+        };
+    }
+
+    function showForgotMessage(msg, type = 'error') {
+        const statusEl = document.getElementById('forgot-status-message');
+        if (!statusEl) return;
+        statusEl.textContent = msg;
+        statusEl.className = `status-message ${type}`;
+        statusEl.classList.remove('hidden');
     }
 
     if (loginForm) {
