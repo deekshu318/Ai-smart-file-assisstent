@@ -1386,12 +1386,129 @@ document.addEventListener('DOMContentLoaded', () => {
             chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
         });
 
-        // --- Voice Dictation (Speech to Text) ---
+        // --- Voice Dictation (Speech to Text with MediaRecorder Fallback) ---
         const voiceBtn = document.querySelector('.voice-btn');
         let recognition = null;
         let isListening = false;
         let isRecordingState = false;
+        let useMediaRecorderFallback = false;
         let initialText = '';
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioStream = null;
+
+        async function startMediaRecorder() {
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = [];
+                
+                // Determine compatible mimeType
+                let options = {};
+                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                    options.mimeType = 'audio/webm';
+                } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                    options.mimeType = 'audio/ogg';
+                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    options.mimeType = 'audio/mp4';
+                }
+
+                mediaRecorder = new MediaRecorder(audioStream, options);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    // Turn off microphone hardware light/indicator
+                    if (audioStream) {
+                        audioStream.getTracks().forEach(track => track.stop());
+                    }
+
+                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                    
+                    // Show transcribing status
+                    chatInput.placeholder = "Transcribing voice...";
+                    voiceBtn.classList.remove('recording');
+                    voiceBtn.classList.add('transcribing');
+                    const micIcon = voiceBtn.querySelector('i');
+                    if (micIcon) {
+                        micIcon.className = 'fas fa-spinner fa-spin';
+                    }
+
+                    try {
+                        const formData = new FormData();
+                        // Append recorded audio file. Whisper endpoints typically expect file extension matching format
+                        const ext = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('ogg')) ? 'ogg' : 
+                                    (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4')) ? 'm4a' : 'webm';
+                        formData.append('file', audioBlob, `voice.${ext}`);
+
+                        const res = await fetch('/transcribe', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.text) {
+                                if (initialText) {
+                                    chatInput.value = initialText.trim() + ' ' + data.text.trim();
+                                } else {
+                                    chatInput.value = data.text.trim();
+                                }
+                                chatInput.dispatchEvent(new Event('input'));
+                            }
+                        } else {
+                            console.error("Transcription failed");
+                            alert("Failed to transcribe voice audio.");
+                        }
+                    } catch (err) {
+                        console.error("Error sending voice to backend:", err);
+                        alert("Error transcribing voice audio.");
+                    } finally {
+                        // Reset button and states
+                        isListening = false;
+                        isRecordingState = false;
+                        useMediaRecorderFallback = false;
+                        voiceBtn.classList.remove('transcribing');
+                        if (micIcon) {
+                            micIcon.className = 'fas fa-microphone';
+                        }
+                        resetPlaceholder();
+                        chatInput.focus();
+                    }
+                };
+
+                mediaRecorder.start();
+                isListening = true;
+                isRecordingState = true;
+                useMediaRecorderFallback = true;
+                initialText = chatInput.value;
+                voiceBtn.classList.add('recording');
+                const micIcon = voiceBtn.querySelector('i');
+                if (micIcon) {
+                    micIcon.className = 'fas fa-microphone-slash';
+                }
+                chatInput.placeholder = "Listening (recording fallback)...";
+            } catch (err) {
+                console.error("MediaRecorder start failed:", err);
+                isListening = false;
+                isRecordingState = false;
+                useMediaRecorderFallback = false;
+                alert("Could not access microphone. Please ensure microphone permissions are granted.");
+            }
+        }
+
+        function resetPlaceholder() {
+            const activeAssistant = document.querySelector('.assistant-card.active');
+            if (activeAssistant) {
+                const name = activeAssistant.querySelector('.assistant-name')?.textContent || 'AI';
+                chatInput.placeholder = `Ask ${name} about your files...`;
+            } else {
+                chatInput.placeholder = "Ask about your files...";
+            }
+        }
 
         if (voiceBtn) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1404,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recognition.onstart = () => {
                     isListening = true;
                     isRecordingState = true;
+                    useMediaRecorderFallback = false;
                     initialText = chatInput.value;
                     voiceBtn.classList.add('recording');
                     const micIcon = voiceBtn.querySelector('i');
@@ -1425,63 +1543,73 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             chatInput.value = sessionTranscript.trim();
                         }
-                        // Trigger input event to adjust textarea height
                         chatInput.dispatchEvent(new Event('input'));
                     }
                 };
 
-                recognition.onerror = (event) => {
+                recognition.onerror = async (event) => {
                     console.error("Speech recognition error:", event.error);
+                    
+                    // Fall back to MediaRecorder on network or not-allowed (iframe) errors
+                    if (event.error === 'network' || event.error === 'not-allowed') {
+                        console.log("Switching to MediaRecorder fallback due to error: " + event.error);
+                        try {
+                            recognition.abort();
+                        } catch (e) {}
+                        
+                        // Clean up SpeechRecognition states
+                        isListening = false;
+                        isRecordingState = false;
+                        voiceBtn.classList.remove('recording');
+                        const micIcon = voiceBtn.querySelector('i');
+                        if (micIcon) micIcon.className = 'fas fa-microphone';
+                        
+                        // Start MediaRecorder fallback
+                        await startMediaRecorder();
+                        return;
+                    }
+
+                    // Otherwise reset standard states and alerts
                     isRecordingState = false;
                     isListening = false;
-                    
                     const isIframe = window.self !== window.top;
                     const directUrl = window.location.origin;
 
-                    if (event.error === 'not-allowed') {
-                        if (isIframe) {
-                            alert(`Microphone permission denied.\n\nBrowsers restrict microphone access inside iframes. Please open the app directly in a new tab to use the microphone:\n\n${directUrl}`);
-                        } else {
-                            alert("Microphone permission denied. Please allow microphone access in your browser settings.");
-                        }
-                    } else if (event.error === 'network') {
-                        if (isIframe) {
-                            alert(`Speech recognition failed with a network error.\n\nChrome blocks Speech Recognition inside embedded spaces. Please open the app directly in a new tab to use the microphone:\n\n${directUrl}`);
-                        } else {
-                            alert("Speech recognition network error. Please check your internet connection.");
-                        }
+                    if (isIframe) {
+                        alert(`Speech recognition error (${event.error}).\n\nTry opening the application directly in a new tab:\n\n${directUrl}`);
                     } else {
-                        if (isIframe) {
-                            alert(`Speech recognition error (${event.error}).\n\nTry opening the application directly in a new tab to bypass iframe limits:\n\n${directUrl}`);
-                        }
+                        alert(`Speech recognition error: ${event.error}`);
                     }
                 };
 
                 recognition.onend = () => {
-                    isListening = false;
-                    isRecordingState = false;
-                    voiceBtn.classList.remove('recording');
-                    const micIcon = voiceBtn.querySelector('i');
-                    if (micIcon) {
-                        micIcon.className = 'fas fa-microphone';
+                    // Only perform clean up if we are NOT in MediaRecorder fallback mode
+                    if (!useMediaRecorderFallback) {
+                        isListening = false;
+                        isRecordingState = false;
+                        voiceBtn.classList.remove('recording');
+                        const micIcon = voiceBtn.querySelector('i');
+                        if (micIcon) {
+                            micIcon.className = 'fas fa-microphone';
+                        }
+                        resetPlaceholder();
+                        chatInput.focus();
                     }
-                    const activeAssistant = document.querySelector('.assistant-card.active');
-                    if (activeAssistant) {
-                        const name = activeAssistant.querySelector('.assistant-name')?.textContent || 'AI';
-                        chatInput.placeholder = `Ask ${name} about your files...`;
-                    } else {
-                        chatInput.placeholder = "Ask about your files...";
-                    }
-                    chatInput.focus();
                 };
 
-                voiceBtn.addEventListener('click', (e) => {
+                voiceBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     if (isRecordingState) {
-                        try {
-                            recognition.stop();
-                        } catch (err) {
-                            console.error("Failed to stop speech recognition:", err);
+                        if (useMediaRecorderFallback) {
+                            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                                mediaRecorder.stop();
+                            }
+                        } else {
+                            try {
+                                recognition.stop();
+                            } catch (err) {
+                                console.error("Failed to stop speech recognition:", err);
+                            }
                         }
                     } else {
                         try {
@@ -1489,14 +1617,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             recognition.start();
                         } catch (err) {
                             isRecordingState = false;
-                            console.error("Failed to start speech recognition:", err);
+                            console.error("Failed to start speech recognition, starting MediaRecorder fallback:", err);
+                            await startMediaRecorder();
                         }
                     }
                 });
             } else {
-                voiceBtn.addEventListener('click', (e) => {
+                // SpeechRecognition is not supported at all, use MediaRecorder directly!
+                voiceBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
-                    alert("Speech recognition is not supported in this browser. Please use a modern browser like Google Chrome or Microsoft Edge.");
+                    if (isRecordingState) {
+                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            mediaRecorder.stop();
+                        }
+                    } else {
+                        await startMediaRecorder();
+                    }
                 });
             }
         }

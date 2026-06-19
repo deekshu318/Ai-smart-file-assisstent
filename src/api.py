@@ -1073,7 +1073,44 @@ async def ask_question(request: QuestionRequest):
                 print(f"Error calling AI model after {retries} attempts: {e}")
                 raise HTTPException(status_code=500, detail="I encountered an issue processing your request.")
 
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    import requests
+    try:
+        # Read file contents
+        audio_data = await file.read()
+        if not audio_data:
+            raise HTTPException(status_code=400, detail="Audio file is empty")
+
+        # Whisper Large V3 endpoint on Hugging Face Serverless Inference API
+        API_URL = "https://api-inference.huggingface.co/models/openai/whisper-large-v3"
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        
+        response = requests.post(API_URL, headers=headers, data=audio_data, timeout=30)
+        
+        # If API is loading the model (503 Service Unavailable), we can try fallback
+        if response.status_code == 200:
+            return response.json()
+        
+        print(f"Whisper V3 error {response.status_code}: {response.text}")
+        
+        # Fallback to Distil-Whisper if first one fails or is loading
+        FALLBACK_URL = "https://api-inference.huggingface.co/models/distil-whisper/distil-large-v3"
+        fallback_res = requests.post(FALLBACK_URL, headers=headers, data=audio_data, timeout=30)
+        
+        if fallback_res.status_code == 200:
+            return fallback_res.json()
+            
+        print(f"Fallback Whisper error {fallback_res.status_code}: {fallback_res.text}")
+        raise HTTPException(status_code=500, detail="Failed to transcribe audio using primary or fallback Whisper service.")
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Transcription exception: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Serve static files (CSS, JS, Images)
+
 static_path = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_path):
     os.makedirs(static_path)
